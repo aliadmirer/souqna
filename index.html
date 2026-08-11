@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سوقنا | أقوى منصة إعلانات مبوبة في العراق - قريباً</title>
+    <meta name="description"
+        content="منصة سوقنا الإعلانية الأولى في العراق. بيع وشراء السيارات، العقارات، الإلكترونيات، الوظائف والخدمات بأمان وسهولة. سجل بريدك ليصلك إشعار فور الإطلاق.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Remix Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Background Decoration -->
+    <div class="bg-shape bg-shape-1"></div>
+    <div class="bg-shape bg-shape-2"></div>
+    <div class="bg-grid-pattern"></div>
+
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="container navbar-container">
+            <div class="logo">
+                <span class="logo-icon"><i class="ri-shopping-bag-3-fill"></i></span>
+                <div class="logo-text">
+                    <span class="brand-name">سوقنا<span class="brand-dot">.</span></span>
+                    <span class="brand-tag">SOUQNA</span>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <div class="country-badge">
+                    <span class="flag">🇮🇶</span>
+                    <span>العراق</span>
+                </div>
+                <button id="theme-toggle" class="theme-toggle-btn" aria-label="تبديل الوضع الداكن/الفاتح">
+                    <i class="ri-moon-line moon-icon"></i>
+                    <i class="ri-sun-line sun-icon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="container">
+                <div class="hero-badge">
+                    <span class="pulse-dot"></span>
+                    <span>🚀 قريباً جِدّاً .. أقوى منصة إعلانات مبوبة مستوحاة عالمياً</span>
+                </div>
+
+                <h1 class="hero-title">
+                    بيع، اشترِ، وتواصل في <span class="highlight">العراق</span> بكل سهولة!
+                </h1>
+
+                <p class="hero-description">
+                    نحن نعمل على تجهيز منصة <strong>سوقنا</strong> لتكون المكان الأسرع والأكثر أماناً لتصفح آلاف
+                    الإعلانات المبوبة يومياً: من السيارات والعقارات، إلى الإلكترونيات والوظائف في كل المحافظات.
+                </p>
+
+                <!-- Souqna Inspired Search Bar Preview -->
+                <div class="search-preview-box">
+                    <div class="search-preview-header">
+                        <i class="ri-search-2-line"></i>
+                        <span>معاينة شريط البحث المستقبلي</span>
+                    </div>
+                    <form id="search-preview-form" class="search-preview-form"
+                        onsubmit="event.preventDefault(); window.showSearchToast();">
+                        <div class="input-group search-input">
+                            <i class="ri-search-line"></i>
+                            <input type="text" id="search-query"
+                                placeholder="عن ماذا تبحث؟ (مثال: تويوتا أربيل، شقة للإيجار...)"
+                                value="تويوتا كامري 2023 أربيل">
+                        </div>
+                        <div class="input-group location-input">
+                            <i class="ri-map-pin-2-line"></i>
+                            <select id="city-select">
+                                <option value="all">كل المحافظات</option>
+                                <option value="baghdad">بغداد</option>
+                                <option value="erbil" selected>أربيل</option>
+                                <option value="basra">البصرة</option>
+                                <option value="mosul">الموصل</option>
+                                <option value="sulaymaniyah">السليمانية</option>
+                                <option value="najaf">النجف الأشرف</option>
+                                <option value="karbala">كربلاء المقدسة</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-search">
+                            <span>بحث</span>
+                            <i class="ri-arrow-left-line"></i>
+                        </button>
+                    </form>
+                    <div class="search-tags">
+                        <span class="tag-title">الأكثر بحثاً:</span>
+                        <span class="tag" onclick="fillSearch('سيارات للبيع')">سيارات للبيع</span>
+                        <span class="tag" onclick="fillSearch('شقق للإيجار في بغداد')">شقق للإيجار</span>
+                        <span class="tag" onclick="fillSearch('آيفون 15 برو ماكس')">آيفون 15</span>
+                        <span class="tag" onclick="fillSearch('وظائف هندسة وتقنية')">وظائف بغداد</span>
+                    </div>
+                </div>
+
+                <!-- Newsletter Subscription Box -->
+                <div class="subscribe-card">
+                    <div class="subscribe-content">
+                        <h3><i class="ri-notification-3-line"></i> كن أول من يعلم عند الإطلاق!</h3>
+                        <p>سجل بريدك الإلكتروني أو رقم هاتفك لتصلك دعوة تجريبية حصرية مع هدية ترقية إعلاناتك مجاناً.</p>
+
+                        <form id="subscribe-form" class="subscribe-form">
+                            <div class="subscribe-input-wrapper">
+                                <i class="ri-mail-line input-icon"></i>
+                                <input type="text" id="user-contact" placeholder="أدخل بريدك الإلكتروني أو رقم هاتفك..."
+                                    required>
+                                <button type="submit" class="btn btn-primary btn-subscribe">
+                                    <span>اشترك الآن</span>
+                                    <i class="ri-send-plane-fill"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Countdown Timer -->
+                <div class="countdown-container">
+                    <h4 class="countdown-title">الوقت المتبقي على الإطلاق الرسمي:</h4>
+                    <div class="countdown-timer" id="countdown">
+                        <div class="time-box">
+                            <span id="days" class="number">14</span>
+                            <span class="label">يوم</span>
+                        </div>
+                        <div class="time-colon">:</div>
+                        <div class="time-box">
+                            <span id="hours" class="number">08</span>
+                            <span class="label">ساعة</span>
+                        </div>
+                        <div class="time-colon">:</div>
+                        <div class="time-box">
+                            <span id="minutes" class="number">32</span>
+                            <span class="label">دقيقة</span>
+                        </div>
+                        <div class="time-colon">:</div>
+                        <div class="time-box">
+                            <span id="seconds" class="number">15</span>
+                            <span class="label">ثانية</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Category Grid Section (Kleinanzeigen Style) -->
+        <section class="categories-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>الأقسام الرئيسية المرتقبة</h2>
+                    <p>تصميم أيقونات شبكي نظيف وعصري مستوحى من سوقنا لتصفح مباشر وسهل</p>
+                </div>
+
+                <div class="category-grid">
+                    <div class="category-card" onclick="showCategoryToast('السيارات والمركبات')">
+                        <div class="cat-icon cat-cars">
+                            <i class="ri-car-fill"></i>
+                        </div>
+                        <h3>السيارات والمركبات</h3>
+                        <p>سيارات جديدة ومستعملة، دراجات، وقطع غيار</p>
+                        <span class="cat-badge">قريباً</span>
+                    </div>
+
+                    <div class="category-card" onclick="showCategoryToast('العقارات والشقق')">
+                        <div class="cat-icon cat-realestate">
+                            <i class="ri-home-4-fill"></i>
+                        </div>
+                        <h3>العقارات والشقق</h3>
+                        <p>بيوت للبيع والإيجار، أراضي ومكاتب تجارية</p>
+                        <span class="cat-badge">قريباً</span>
+                    </div>
+
+                    <div class="category-card" onclick="showCategoryToast('الإلكترونيات والموبايلات')">
+                        <div class="cat-icon cat-electronics">
+                            <i class="ri-smartphone-fill"></i>
+                        </div>
+                        <h3>الإلكترونيات والموبايلات</h3>
+                        <p>هواتف، أجهزة كمبيوتر، شاشات وأجهزة منزلية</p>
+                        <span class="cat-badge">قريباً</span>
+                    </div>
+
+                    <div class="category-card" onclick="showCategoryToast('الوظائف وفرص العمل')">
+                        <div class="cat-icon cat-jobs">
+                            <i class="ri-briefcase-4-fill"></i>
+                        </div>
+                        <h3>الوظائف وفرص العمل</h3>
+                        <p>وظائف شاغرة في كبرى الشركات والمؤسسات</p>
+                        <span class="cat-badge">قريباً</span>
+                    </div>
+
+                    <div class="category-card" onclick="showCategoryToast('الخدمات والأعمال')">
+                        <div class="cat-icon cat-services">
+                            <i class="ri-tools-fill"></i>
+                        </div>
+                        <h3>الخدمات والأعمال</h3>
+                        <p>صيانة، نقل عفش، تعليم، واستشارات</p>
+                        <span class="cat-badge">قريباً</span>
+                    </div>
+
+                    <div class="category-card" onclick="showCategoryToast('الأثاث والمنزل')">
+                        <div class="cat-icon cat-furniture">
+                            <i class="ri-sofa-fill"></i>
+                        </div>
+                        <h3>الأثاث والمنزل</h3>
+                        <p>غرف نوم، مطابخ، ديكور، ومستلزمات حدائق</p>
+                        <span class="cat-badge">قريباً</span>
+                    </div>
+
+                    <div class="category-card" onclick="showCategoryToast('الموضة والأزياء')">
+                        <div class="cat-icon cat-fashion">
+                            <i class="ri-t-shirt-fill"></i>
+                        </div>
+                        <h3>الموضة والأزياء</h3>
+                        <p>ملابس، ساعات، إكسسوارات وعطور</p>
+                        <span class="cat-badge">قريباً</span>
+                    </div>
+
+                    <div class="category-card" onclick="showCategoryToast('الحيوانات والأليفات')">
+                        <div class="cat-icon cat-pets">
+                            <i class="ri-bear-smile-fill"></i>
+                        </div>
+                        <h3>الحيوانات والأليفات</h3>
+                        <p>طيور، أليفات، ومستلزمات العناية بها</p>
+                        <span class="cat-badge">قريباً</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cities Coverage Section -->
+        <section class="cities-section">
+            <div class="container">
+                <div class="cities-box">
+                    <div class="cities-content">
+                        <h3><i class="ri-map-pin-user-fill"></i> تغطية كاملة لكل المحافظات العراقية 🇮🇶</h3>
+                        <p>أينما كنت في العراق، ستتمكن من تصفح الإعلانات وتحديد مدينتك وحيك بسهولة فائقة.</p>
+                    </div>
+                    <div class="city-chips">
+                        <span class="chip active" onclick="selectCityChip(this, 'بغداد')"><i
+                                class="ri-map-pin-fill"></i> بغداد</span>
+                        <span class="chip" onclick="selectCityChip(this, 'أربيل')"><i class="ri-map-pin-fill"></i>
+                            أربيل</span>
+                        <span class="chip" onclick="selectCityChip(this, 'البصرة')"><i class="ri-map-pin-fill"></i>
+                            البصرة</span>
+                        <span class="chip" onclick="selectCityChip(this, 'الموصل')"><i class="ri-map-pin-fill"></i>
+                            الموصل</span>
+                        <span class="chip" onclick="selectCityChip(this, 'السليمانية')"><i class="ri-map-pin-fill"></i>
+                            السليمانية</span>
+                        <span class="chip" onclick="selectCityChip(this, 'النجف')"><i class="ri-map-pin-fill"></i>
+                            النجف</span>
+                        <span class="chip" onclick="selectCityChip(this, 'كربلاء')"><i class="ri-map-pin-fill"></i>
+                            كربلاء</span>
+                        <span class="chip" onclick="selectCityChip(this, 'دهوك')"><i class="ri-map-pin-fill"></i>
+                            دهوك</span>
+                        <span class="chip" onclick="selectCityChip(this, 'كركوك')"><i class="ri-map-pin-fill"></i>
+                            كركوك</span>
+                        <span class="chip" onclick="selectCityChip(this, 'الناصرية')"><i class="ri-map-pin-fill"></i>
+                            الناصرية</span>
+                        <span class="chip" onclick="selectCityChip(this, 'العمارة')"><i class="ri-map-pin-fill"></i>
+                            العمارة</span>
+                        <span class="chip" onclick="selectCityChip(this, 'الديوانية')"><i class="ri-map-pin-fill"></i>
+                            الديوانية</span>
+                        <span class="chip" onclick="selectCityChip(this, 'الرمادي')"><i class="ri-map-pin-fill"></i>
+                            الرمادي</span>
+                        <span class="chip" onclick="selectCityChip(this, 'الحلة')"><i class="ri-map-pin-fill"></i>
+                            الحلة</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features / Why Us -->
+        <section class="features-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>لماذا منصة "سوقنا"؟</h2>
+                    <p>الميزات الأكثر قوة وسهولة التي نعدك بها فور الإطلاق الرسمي</p>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feat-icon"><i class="ri-speed-up-fill"></i></div>
+                        <h3>نشر سريع في ثوانٍ</h3>
+                        <p>أضف إعلانك بضغطة زر مع رفع الصور بسهولة وسرعة فائقة دون تعقيدات.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feat-icon"><i class="ri-whatsapp-fill"></i></div>
+                        <h3>تواصل مباشر عبر الواتساب والشات</h3>
+                        <p>تواصل مع البائع أو المشتري مباشرة عبر المحادثة الفورية دون وسطاء.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feat-icon"><i class="ri-shield-check-fill"></i></div>
+                        <h3>إعلانات موثوقة وآمنة</h3>
+                        <p>نظام ذكي لفحص الإعلانات وتوثيق البائعين لتجربة تسوق آمنة 100%.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="toast-icon"><i class="ri-checkbox-circle-fill"></i></div>
+        <div class="toast-message" id="toast-text">تمت العملية بنجاح</div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-brand">
+                <div class="logo">
+                    <span class="logo-icon"><i class="ri-shopping-bag-3-fill"></i></span>
+                    <span class="brand-name">سوقنا<span class="brand-dot">.</span></span>
+                </div>
+                <p>منصة الإعلانات المبوبة الأحدث والأسرع في العراق 🇮🇶</p>
+            </div>
+
+            <div class="footer-socials">
+                <a href="#" class="social-btn" title="فيسبوك"><i class="ri-facebook-circle-fill"></i></a>
+                <a href="#" class="social-btn" title="إنستغرام"><i class="ri-instagram-line"></i></a>
+                <a href="#" class="social-btn" title="تليغرام"><i class="ri-telegram-fill"></i></a>
+                <a href="#" class="social-btn" title="واتساب"><i class="ri-whatsapp-fill"></i></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>جميع الحقوق محفوظة © 2026 منصة سوقنا - الإعلانات المبوبة في العراق</p>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+
+</html>
