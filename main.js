@@ -7,9 +7,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Configurable Evolution API settings for WhatsApp OTP Sending
 const EVOLUTION_API_CONFIG = {
-    baseUrl: 'https://your-evolution-api.com', // رابط سيرفر Evolution API
-    instanceName: 'souq_rafidain',           // اسم الإنستانس/Instance
-    apiKey: 'YOUR_EVOLUTION_API_KEY'         // مفتاح الـ API الخاص بـ Evolution
+    baseUrl: 'http://5.189.178.134:8080',      // رابط سيرفر Evolution API
+    instanceName: 'green power',               // اسم الإنستانس
+    apiKey: 'Ww20252025'                       // مفتاح الـ API الخاص بـ Evolution
 };
 
 let supabaseClient = null;
@@ -119,13 +119,14 @@ async function sendEvolutionWhatsAppOTP(phone, code) {
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     let fullNumber = cleanPhone.startsWith('964') ? cleanPhone : '964' + (cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone);
 
-    const messageText = `💬 رمز التحقق الخاص بك في منصة سوق الرافدين هو: *${code}*\n\nالرمز صالج لمدة 5 دقائق. يرجى عدم مشاركته مع أي شخص.`;
+    const messageText = `💬 رمز التحقق الخاص بك في منصة سوق الرافدين هو: *${code}*\n\nالرمز صالح لمدة 5 دقائق. يرجى عدم مشاركته مع أي شخص.`;
 
     console.log(`💬 Sending Evolution WhatsApp OTP [${code}] to +${fullNumber}`);
 
-    if (EVOLUTION_API_CONFIG.baseUrl && EVOLUTION_API_CONFIG.apiKey && EVOLUTION_API_CONFIG.apiKey !== 'YOUR_EVOLUTION_API_KEY') {
+    if (EVOLUTION_API_CONFIG.baseUrl && EVOLUTION_API_CONFIG.apiKey) {
         try {
-            await fetch(`${EVOLUTION_API_CONFIG.baseUrl}/message/sendText/${EVOLUTION_API_CONFIG.instanceName}`, {
+            const instanceEndpoint = encodeURIComponent(EVOLUTION_API_CONFIG.instanceName);
+            await fetch(`${EVOLUTION_API_CONFIG.baseUrl}/message/sendText/${instanceEndpoint}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
