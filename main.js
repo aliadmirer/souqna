@@ -669,7 +669,7 @@ function renderListings() {
                 </div>
                 <div class="card-content">
                     <div class="card-price-row">
-                        <span class="card-price">$${formattedPrice}</span>
+                        <span class="card-price">${formattedPrice} د.ع</span>
                         ${item.is_negotiable ? '<span class="negotiable-tag">قابل للتفاوض</span>' : ''}
                     </div>
                     <h3 class="card-title">${item.title}</h3>
@@ -901,7 +901,7 @@ window.openDetailModal = async function(listingId) {
         <div class="detail-info">
             <div>
                 <div class="detail-price-box">
-                    <span class="detail-price">$${formattedPrice}</span>
+                    <span class="detail-price">${formattedPrice} د.ع</span>
                     ${item.is_negotiable ? '<span class="negotiable-tag">السعر قابل للتفاوض</span>' : ''}
                 </div>
                 <h2 class="detail-title">${item.title}</h2>
