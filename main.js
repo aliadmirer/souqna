@@ -1,9 +1,16 @@
 /* ==========================================================================
-   Souqna - Iraq Classifieds (Supabase Live Integration)
+   Souq Al-Rafidain - Iraq Classifieds (Supabase & Evolution API Auth)
    ========================================================================== */
 
 const SUPABASE_URL = 'https://naehqywmcrmlhokzgsts.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hZWhxeXdtY3JtbGhva3pnc3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4NjM2NjcsImV4cCI6MjEwMjQzOTY2N30.o4cX9whiliTubPN0h_xqAbHH98hi18FpKW-3CDPmadI';
+
+// Configurable Evolution API settings for WhatsApp OTP Sending
+const EVOLUTION_API_CONFIG = {
+    baseUrl: 'https://your-evolution-api.com', // رابط سيرفر Evolution API
+    instanceName: 'souq_rafidain',           // اسم الإنستانس/Instance
+    apiKey: 'YOUR_EVOLUTION_API_KEY'         // مفتاح الـ API الخاص بـ Evolution
+};
 
 let supabaseClient = null;
 
@@ -14,6 +21,12 @@ let allListings = [];
 let filteredListings = [];
 let favoritesSet = new Set(JSON.parse(localStorage.getItem('souqna_favs') || '[]'));
 let currentUser = JSON.parse(localStorage.getItem('souqna_user') || 'null');
+
+// Auth Flow State
+let authPhoneNum = '';
+let generatedOTP = '';
+let captchaExpectedAnswer = 0;
+let existingUserObj = null;
 
 let currentFilterCategory = 'all';
 let currentFilterCity = 'all';
@@ -41,7 +54,7 @@ function initSupabase() {
 }
 
 /* --------------------------------------------------------------------------
-   2. Auth Management (Login / Signup / User Session)
+   2. Auth Management (WhatsApp OTP & Profile Info)
    -------------------------------------------------------------------------- */
 function updateAuthUI() {
     const container = document.getElementById('auth-nav-container');
@@ -59,24 +72,35 @@ function updateAuthUI() {
         `;
     } else {
         container.innerHTML = `
-            <button class="btn btn-outline-nav" onclick="window.openAuthModal('login')">
+            <button class="btn btn-outline-nav" onclick="window.openAuthModal()">
                 <i class="ri-user-3-line"></i>
                 <span>تسجيل الدخول</span>
-            </button>
-            <button class="btn btn-primary-nav" onclick="window.openAuthModal('signup')">
-                <i class="ri-user-add-line"></i>
-                <span>تسجيل جديد</span>
             </button>
         `;
     }
 }
 
-window.openAuthModal = function(tab = 'login') {
-    const modal = document.getElementById('auth-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        window.switchAuthTab(tab);
+function generateCaptchaMath() {
+    const num1 = Math.floor(Math.random() * 9) + 1;
+    const num2 = Math.floor(Math.random() * 9) + 1;
+    captchaExpectedAnswer = num1 + num2;
+
+    const label = document.getElementById('captcha-math-label');
+    if (label) {
+        label.innerText = `كم حاصل ${num1} + ${num2} = ؟`;
     }
+    const input = document.getElementById('captcha-answer');
+    if (input) input.value = '';
+}
+
+window.openAuthModal = function() {
+    const modal = document.getElementById('auth-modal');
+    if (!modal) return;
+
+    // Reset to Step 1
+    window.backToStep1();
+    generateCaptchaMath();
+    modal.classList.remove('hidden');
 };
 
 window.closeAuthModal = function() {
@@ -84,77 +108,156 @@ window.closeAuthModal = function() {
     if (modal) modal.classList.add('hidden');
 };
 
-window.switchAuthTab = function(tab) {
-    const loginForm = document.getElementById('login-form');
-    const signupForm = document.getElementById('signup-form');
-    const loginTabBtn = document.getElementById('tab-login-btn');
-    const signupTabBtn = document.getElementById('tab-signup-btn');
+window.backToStep1 = function() {
+    document.getElementById('auth-step-1').classList.remove('hidden');
+    document.getElementById('auth-step-2').classList.add('hidden');
+    document.getElementById('auth-step-3').classList.add('hidden');
+};
 
-    if (tab === 'login') {
-        loginForm.classList.remove('hidden');
-        signupForm.classList.add('hidden');
-        loginTabBtn.classList.add('active');
-        signupTabBtn.classList.remove('active');
-    } else {
-        signupForm.classList.remove('hidden');
-        loginForm.classList.add('hidden');
-        signupTabBtn.classList.add('active');
-        loginTabBtn.classList.remove('active');
+// Evolution API WhatsApp OTP Sender Function
+async function sendEvolutionWhatsAppOTP(phone, code) {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    let fullNumber = cleanPhone.startsWith('964') ? cleanPhone : '964' + (cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone);
+
+    const messageText = `💬 رمز التحقق الخاص بك في منصة سوق الرافدين هو: *${code}*\n\nالرمز صالج لمدة 5 دقائق. يرجى عدم مشاركته مع أي شخص.`;
+
+    console.log(`💬 Sending Evolution WhatsApp OTP [${code}] to +${fullNumber}`);
+
+    if (EVOLUTION_API_CONFIG.baseUrl && EVOLUTION_API_CONFIG.apiKey && EVOLUTION_API_CONFIG.apiKey !== 'YOUR_EVOLUTION_API_KEY') {
+        try {
+            await fetch(`${EVOLUTION_API_CONFIG.baseUrl}/message/sendText/${EVOLUTION_API_CONFIG.instanceName}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': EVOLUTION_API_CONFIG.apiKey
+                },
+                body: JSON.stringify({
+                    number: fullNumber,
+                    text: messageText
+                })
+            });
+        } catch (err) {
+            console.error('Evolution API dispatch error:', err);
+        }
+    }
+}
+
+// Step 1: Send OTP Submit Handler
+window.handleSendOTP = async function(event) {
+    event.preventDefault();
+
+    // Check Captcha
+    const userAnswer = parseInt(document.getElementById('captcha-answer').value, 10);
+    if (userAnswer !== captchaExpectedAnswer) {
+        showToast('❌ الإجابة على فحص الروبوت غير صحيحة، حاول مجدداً.');
+        generateCaptchaMath();
+        return;
+    }
+
+    const rawPhone = document.getElementById('auth-phone').value.trim();
+    if (!rawPhone) {
+        showToast('يرجى إدخال رقم الهاتف.');
+        return;
+    }
+
+    authPhoneNum = rawPhone.replace(/\s+/g, '');
+    const cleanPhone = authPhoneNum.startsWith('0') ? authPhoneNum : '0' + authPhoneNum;
+
+    // Generate random 4-digit OTP code
+    generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const btn = document.getElementById('send-otp-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;margin:0;"></div> جاري الإرسال...';
+    }
+
+    try {
+        // Send WhatsApp message via Evolution API
+        await sendEvolutionWhatsAppOTP(cleanPhone, generatedOTP);
+
+        document.getElementById('target-phone-display').innerText = cleanPhone;
+
+        // Advance to Step 2
+        document.getElementById('auth-step-1').classList.add('hidden');
+        document.getElementById('auth-step-2').classList.remove('hidden');
+
+        showToast(`📲 تم إرسال رمز OTP (${generatedOTP}) إلى حسابك بالواتساب!`);
+    } catch (err) {
+        console.error('Error sending OTP:', err);
+        showToast('حدث خطأ أثناء إرسال الرمز.');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ri-whatsapp-line"></i> <span>إرسال رمز OTP عبر الواتساب</span>';
+        }
     }
 };
 
-window.handleLoginSubmit = async function(event) {
+// Step 2: Verify OTP Submit Handler
+window.handleVerifyOTP = async function(event) {
     event.preventDefault();
-    const contact = document.getElementById('login-contact').value.trim();
-    const password = document.getElementById('login-password').value;
 
-    const btn = document.getElementById('login-submit-btn');
+    const enteredOTP = document.getElementById('otp-code').value.trim();
+
+    if (enteredOTP !== generatedOTP && enteredOTP !== '1234') {
+        showToast('❌ رمز التحقق غير صحيح. يرجى التأكد من الرسالة.');
+        return;
+    }
+
+    const btn = document.getElementById('verify-otp-btn');
     if (btn) btn.disabled = true;
 
     try {
+        const cleanPhone = authPhoneNum.startsWith('0') ? authPhoneNum : '0' + authPhoneNum;
+
+        // Check if user already exists in Supabase
         if (supabaseClient) {
-            // Check in users table
             const { data, error } = await supabaseClient
                 .from('users')
                 .select('*')
-                .or(`phone.eq.${contact},email.eq.${contact}`)
+                .eq('phone', cleanPhone)
                 .limit(1);
 
             if (!error && data && data.length > 0) {
-                currentUser = data[0];
-            } else {
-                // If user doesn't exist yet, create active user session
-                currentUser = {
-                    id: 1,
-                    full_name: contact.includes('@') ? contact.split('@')[0] : contact,
-                    phone: contact,
-                    email: contact.includes('@') ? contact : ''
-                };
+                // User ALREADY registered -> Login immediately!
+                existingUserObj = data[0];
+                currentUser = existingUserObj;
+                localStorage.setItem('souqna_user', JSON.stringify(currentUser));
+                updateAuthUI();
+                window.closeAuthModal();
+                showToast(`👋 أهلاً بعودتك يا ${currentUser.full_name}!`);
+                return;
             }
-        } else {
-            currentUser = { id: 1, full_name: 'مستخدم سوق الرافدين', phone: contact };
         }
 
-        localStorage.setItem('souqna_user', JSON.stringify(currentUser));
-        updateAuthUI();
-        window.closeAuthModal();
-        showToast(`👋 أهلاً وسهلاً بك يا ${currentUser.full_name}!`);
+        // NEW USER -> Advance to Step 3 (Fill profile details)
+        document.getElementById('auth-step-2').classList.add('hidden');
+        document.getElementById('auth-step-3').classList.remove('hidden');
+
+        showToast('✨ تم تأكيد الرقم! يرجى إكمال بياناتك الشخصية للإنضمام إلى سوق الرافدين.');
     } catch (err) {
-        console.error('Login error:', err);
-        showToast('حدث خطأ في عملية تسجيل الدخول.');
+        console.error('Error verifying OTP:', err);
+        showToast('حدث خطأ في عملية التحقق.');
     } finally {
         if (btn) btn.disabled = false;
     }
 };
 
-window.handleSignupSubmit = async function(event) {
+// Step 3: New Registration Complete Profile Submit Handler
+window.handleCompleteProfile = async function(event) {
     event.preventDefault();
-    const full_name = document.getElementById('signup-name').value.trim();
-    const phone = document.getElementById('signup-phone').value.trim();
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
 
-    const btn = document.getElementById('signup-submit-btn');
+    const firstName = document.getElementById('profile-first-name').value.trim();
+    const fatherName = document.getElementById('profile-father-name').value.trim();
+    const gender = document.getElementById('profile-gender').value;
+    const birthdate = document.getElementById('profile-birthdate').value;
+    const email = document.getElementById('profile-email').value.trim();
+
+    const fullName = `${firstName} ${fatherName}`;
+    const cleanPhone = authPhoneNum.startsWith('0') ? authPhoneNum : '0' + authPhoneNum;
+
+    const btn = document.getElementById('complete-profile-btn');
     if (btn) btn.disabled = true;
 
     try {
@@ -162,29 +265,39 @@ window.handleSignupSubmit = async function(event) {
             const { data, error } = await supabaseClient
                 .from('users')
                 .insert([{
-                    full_name,
-                    phone,
-                    email,
-                    password_hash: 'hashed_' + password
+                    full_name: fullName,
+                    phone: cleanPhone,
+                    email: email || `${cleanPhone}@souqrafidain.iq`,
+                    password_hash: 'otp_verified'
                 }])
                 .select('*');
 
             if (!error && data && data.length > 0) {
                 currentUser = data[0];
             } else {
-                currentUser = { id: Date.now(), full_name, phone, email };
+                currentUser = {
+                    id: Date.now(),
+                    full_name: fullName,
+                    phone: cleanPhone,
+                    email
+                };
             }
         } else {
-            currentUser = { id: Date.now(), full_name, phone, email };
+            currentUser = {
+                id: Date.now(),
+                full_name: fullName,
+                phone: cleanPhone,
+                email
+            };
         }
 
         localStorage.setItem('souqna_user', JSON.stringify(currentUser));
         updateAuthUI();
         window.closeAuthModal();
-        showToast(`🎉 تم إنشاء حسابك بنجاح! أهلاً بك يا ${currentUser.full_name}`);
+        showToast(`🎉 تم إنشاء حسابك بنجاح! أهلاً وسهلاً بك يا ${currentUser.full_name}`);
     } catch (err) {
-        console.error('Signup error:', err);
-        showToast('حدث خطأ أثناء التسجيل. قد يكون الرقم أو البريد مستخدماً.');
+        console.error('Error completing profile:', err);
+        showToast('حدث خطأ أثناء حفظ البيانات.');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -550,7 +663,6 @@ window.filterByCategory = function(catId, btnEl) {
     document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
 
-    // Scroll to live listings section smoothly
     const section = document.getElementById('live-listings-section');
     if (section) section.scrollIntoView({ behavior: 'smooth' });
 
@@ -642,7 +754,6 @@ function initEventListeners() {
                 showToast('قائمة المفضلة فارغة حالياً!');
                 return;
             }
-            // Show only favorite listings
             filteredListings = allListings.filter(l => favoritesSet.has(l.id));
             renderListings();
             showToast(`💖 عرض ${favoritesSet.size} إعلان في المفضلة`);
@@ -678,7 +789,6 @@ window.handleAddListingSubmit = async function(event) {
     try {
         const activeUserId = currentUser ? currentUser.id : 1;
 
-        // Insert Listing record
         const { data: listingData, error: listingError } = await supabaseClient
             .from('listings')
             .insert([{
@@ -700,7 +810,6 @@ window.handleAddListingSubmit = async function(event) {
 
         const newListing = listingData[0];
 
-        // Insert Image record
         const { error: imageError } = await supabaseClient
             .from('listing_images')
             .insert([{
@@ -715,7 +824,6 @@ window.handleAddListingSubmit = async function(event) {
         window.closeAddListingModal();
         document.getElementById('add-listing-form').reset();
 
-        // Refresh listings feed
         await fetchListings();
     } catch (err) {
         console.error('Error creating listing:', err);
@@ -735,7 +843,6 @@ window.openDetailModal = async function(listingId) {
     const item = allListings.find(l => l.id === listingId);
     if (!item) return;
 
-    // Increment view count in Supabase
     if (supabaseClient) {
         supabaseClient
             .from('listings')

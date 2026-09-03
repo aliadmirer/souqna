@@ -45,13 +45,9 @@
 
             <div class="nav-actions">
                 <div id="auth-nav-container" class="auth-nav-container">
-                    <button class="btn btn-outline-nav" onclick="window.openAuthModal('login')">
+                    <button class="btn btn-outline-nav" onclick="window.openAuthModal()">
                         <i class="ri-user-3-line"></i>
                         <span>تسجيل الدخول</span>
-                    </button>
-                    <button class="btn btn-primary-nav" onclick="window.openAuthModal('signup')">
-                        <i class="ri-user-add-line"></i>
-                        <span>تسجيل جديد</span>
                     </button>
                 </div>
 
@@ -345,63 +341,107 @@
         </div>
     </div>
 
-    <!-- Modal: Auth (تسجيل الدخول / إنشاء حساب جديد) -->
+    <!-- Modal: Auth (تسجيل الدخول / حساب جديد عبر الواتساب OTP) -->
     <div id="auth-modal" class="modal-overlay hidden">
         <div class="modal-card">
-            <div class="modal-header auth-modal-header">
-                <div class="auth-tabs">
-                    <button id="tab-login-btn" class="auth-tab active" onclick="window.switchAuthTab('login')">
-                        <i class="ri-login-box-line"></i> تسجيل الدخول
-                    </button>
-                    <button id="tab-signup-btn" class="auth-tab" onclick="window.switchAuthTab('signup')">
-                        <i class="ri-user-add-line"></i> حساب جديد
-                    </button>
-                </div>
+            <div class="modal-header">
+                <h3><i class="ri-shield-user-fill icon-green"></i> تسجيل الدخول / حساب جديد</h3>
                 <button class="modal-close" onclick="window.closeAuthModal()">&times;</button>
             </div>
 
-            <!-- Login Form -->
-            <form id="login-form" class="modal-body" onsubmit="window.handleLoginSubmit(event)">
+            <!-- Step 1: Phone Number Input with Iraqi Prefix & Anti-Robot Captcha -->
+            <form id="auth-step-1" class="modal-body" onsubmit="window.handleSendOTP(event)">
+                <p class="auth-step-desc">أدخل رقم هاتفك العراقي ليصلك رمز التحقق (OTP) عبر الواتساب 💬</p>
+
                 <div class="form-group">
-                    <label for="login-contact">رقم الهاتف أو البريد الإلكتروني *</label>
-                    <input type="text" id="login-contact" placeholder="مثال: 07700000000 أو test@rafidain.iq" required>
+                    <label for="auth-phone">رقم الموبايل العراقي *</label>
+                    <div class="phone-input-wrapper">
+                        <span class="phone-prefix">🇮🇶 +964</span>
+                        <input type="tel" id="auth-phone" placeholder="0770 123 4567" required autofocus pattern="[0-9\s]{10,11}">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="login-password">كلمة المرور *</label>
-                    <input type="password" id="login-password" placeholder="••••••••" required>
+
+                <!-- Anti-Robot Captcha Check -->
+                <div class="captcha-box">
+                    <div class="captcha-header">
+                        <i class="ri-robot-2-line"></i>
+                        <span>فحص الحماية من الروبوت:</span>
+                    </div>
+                    <div class="captcha-body">
+                        <strong id="captcha-math-label">كم حاصل 5 + 3 = ؟</strong>
+                        <input type="number" id="captcha-answer" placeholder="إجابة الفحص..." required>
+                    </div>
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="window.closeAuthModal()">إلغاء</button>
-                    <button type="submit" id="login-submit-btn" class="btn btn-primary">
-                        <i class="ri-login-circle-line"></i> <span>تسجيل الدخول</span>
+                    <button type="submit" id="send-otp-btn" class="btn btn-whatsapp-auth">
+                        <i class="ri-whatsapp-line"></i> <span>إرسال رمز OTP عبر الواتساب</span>
                     </button>
                 </div>
             </form>
 
-            <!-- Sign Up Form -->
-            <form id="signup-form" class="modal-body hidden" onsubmit="window.handleSignupSubmit(event)">
-                <div class="form-group">
-                    <label for="signup-name">الاسم الكامل *</label>
-                    <input type="text" id="signup-name" placeholder="مثال: علي العراقي" required>
+            <!-- Step 2: OTP Code Verification -->
+            <form id="auth-step-2" class="modal-body hidden" onsubmit="window.handleVerifyOTP(event)">
+                <div class="otp-sent-info">
+                    <i class="ri-whatsapp-fill color-whatsapp"></i>
+                    <p>تم إرسال رمز التحقق إلى الرقم <strong id="target-phone-display">07700000000</strong> عبر الواتساب.</p>
                 </div>
+
+                <div class="form-group">
+                    <label for="otp-code">رمز التحقق (OTP) *</label>
+                    <input type="text" id="otp-code" placeholder="أدخل الرمز المكون من 4 أرقام" required maxlength="6" class="otp-input">
+                    <small class="otp-hint">تم إرسال الرمز برسالة واتساب من خادم Evolution API</small>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="window.backToStep1()">تغيير الرقم</button>
+                    <button type="submit" id="verify-otp-btn" class="btn btn-primary">
+                        <i class="ri-checkbox-circle-line"></i> <span>تأكيد الرمز والدخول</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Step 3: New User Complete Profile Registration -->
+            <form id="auth-step-3" class="modal-body hidden" onsubmit="window.handleCompleteProfile(event)">
+                <div class="new-user-welcome-badge">
+                    <i class="ri-sparkles-fill"></i>
+                    <span>مرحباً بك! يرجى إكمال بياناتك الشخصية لإنشاء حسابك الجديد:</span>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="signup-phone">رقم الهاتف *</label>
-                        <input type="tel" id="signup-phone" placeholder="07700000000" required>
+                        <label for="profile-first-name">الاسم الأول *</label>
+                        <input type="text" id="profile-first-name" placeholder="مثال: علي" required>
                     </div>
                     <div class="form-group">
-                        <label for="signup-email">البريد الإلكتروني</label>
-                        <input type="email" id="signup-email" placeholder="user@domain.com">
+                        <label for="profile-father-name">اسم الأب والعائلة *</label>
+                        <input type="text" id="profile-father-name" placeholder="مثال: محمد العراقي" required>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="signup-password">كلمة المرور *</label>
-                    <input type="password" id="signup-password" placeholder="••••••••" required minlength="4">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profile-gender">الجنس *</label>
+                        <select id="profile-gender" required>
+                            <option value="ذكر" selected>ذكر</option>
+                            <option value="أنثى">أنثى</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-birthdate">تاريخ / سنة الميلاد *</label>
+                        <input type="date" id="profile-birthdate" required>
+                    </div>
                 </div>
+
+                <div class="form-group">
+                    <label for="profile-email">البريد الإلكتروني (اختياري)</label>
+                    <input type="email" id="profile-email" placeholder="name@domain.com">
+                </div>
+
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="window.closeAuthModal()">إلغاء</button>
-                    <button type="submit" id="signup-submit-btn" class="btn btn-primary">
-                        <i class="ri-user-add-line"></i> <span>إنشاء الحساب الآن</span>
+                    <button type="submit" id="complete-profile-btn" class="btn btn-primary">
+                        <i class="ri-check-double-line"></i> <span>إتمام التسجيل والبدء</span>
                     </button>
                 </div>
             </form>
