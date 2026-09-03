@@ -1463,15 +1463,73 @@ body {
     border-top: 1px solid var(--border-color);
 }
 
+/* Button Utility System */
+.btn {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 800;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all var(--transition-fast);
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.btn i {
+    font-size: 1.15rem;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--secondary);
+    box-shadow: 0 4px 14px rgba(134, 184, 23, 0.35);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(134, 184, 23, 0.45);
+}
+
+[data-theme="dark"] .btn-primary {
+    background: var(--primary);
+    color: #0f172a;
+    box-shadow: 0 4px 14px rgba(134, 184, 23, 0.25);
+}
+
+[data-theme="dark"] .btn-primary:hover {
+    background: var(--primary-hover);
+    color: #ffffff;
+}
+
 .btn-secondary {
     background: var(--bg-main);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 0.7rem 1.4rem;
+    padding: 0.75rem 1.4rem;
     border-radius: 12px;
-    font-family: var(--font-body);
+    font-family: var(--font-heading);
     font-weight: 700;
+    font-size: 0.95rem;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-surface);
+    border-color: var(--text-muted);
+    color: var(--text-primary);
 }
 
 /* Detail Modal View Styling */
