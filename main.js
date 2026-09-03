@@ -114,14 +114,12 @@ window.backToStep1 = function() {
     document.getElementById('auth-step-3').classList.add('hidden');
 };
 
-// Evolution API WhatsApp OTP Sender Function
+// Evolution API WhatsApp OTP Sender Function (Secret dispatch, no screen log)
 async function sendEvolutionWhatsAppOTP(phone, code) {
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     let fullNumber = cleanPhone.startsWith('964') ? cleanPhone : '964' + (cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone);
 
     const messageText = `💬 رمز التحقق الخاص بك في منصة سوق الرافدين هو: *${code}*\n\nالرمز صالح لمدة 5 دقائق. يرجى عدم مشاركته مع أي شخص.`;
-
-    console.log(`💬 Sending Evolution WhatsApp OTP to +${fullNumber}`);
 
     if (EVOLUTION_API_CONFIG.baseUrl && EVOLUTION_API_CONFIG.apiKey) {
         try {
@@ -141,6 +139,41 @@ async function sendEvolutionWhatsAppOTP(phone, code) {
             console.error('Evolution API dispatch error:', err);
         }
     }
+}
+
+// Helper: Check if phone is registered in Supabase or Local Storage
+async function findRegisteredUser(rawPhone) {
+    const digitsOnly = rawPhone.replace(/[^0-9]/g, '');
+    const localPhone = digitsOnly.startsWith('964') ? '0' + digitsOnly.slice(3) : (digitsOnly.startsWith('0') ? digitsOnly : '0' + digitsOnly);
+    const intlPhone = digitsOnly.startsWith('964') ? digitsOnly : '964' + (digitsOnly.startsWith('0') ? digitsOnly.slice(1) : digitsOnly);
+    const plusPhone = '+' + intlPhone;
+
+    // 1. Check local storage cache of registered users
+    const registeredLocal = JSON.parse(localStorage.getItem('souqna_registered_users') || '[]');
+    const localMatch = registeredLocal.find(u => {
+        const uDigits = (u.phone || '').replace(/[^0-9]/g, '');
+        return uDigits.includes(digitsOnly) || digitsOnly.includes(uDigits) || u.phone === localPhone || u.phone === intlPhone || u.phone === plusPhone;
+    });
+    if (localMatch) return localMatch;
+
+    // 2. Check Supabase DB
+    if (supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('*')
+                .or(`phone.eq.${localPhone},phone.eq.${intlPhone},phone.eq.${plusPhone},phone.eq.${rawPhone}`)
+                .limit(1);
+
+            if (!error && data && data.length > 0) {
+                return data[0];
+            }
+        } catch (e) {
+            console.error('User lookup error:', e);
+        }
+    }
+
+    return null;
 }
 
 // Step 1: Send OTP Submit Handler
@@ -210,26 +243,17 @@ window.handleVerifyOTP = async function(event) {
     if (btn) btn.disabled = true;
 
     try {
-        const cleanPhone = authPhoneNum.startsWith('0') ? authPhoneNum : '0' + authPhoneNum;
+        // Check if user is already registered in Supabase or Local Cache
+        existingUserObj = await findRegisteredUser(authPhoneNum);
 
-        // Check if user already exists in Supabase
-        if (supabaseClient) {
-            const { data, error } = await supabaseClient
-                .from('users')
-                .select('*')
-                .eq('phone', cleanPhone)
-                .limit(1);
-
-            if (!error && data && data.length > 0) {
-                // User ALREADY registered -> Login immediately!
-                existingUserObj = data[0];
-                currentUser = existingUserObj;
-                localStorage.setItem('souqna_user', JSON.stringify(currentUser));
-                updateAuthUI();
-                window.closeAuthModal();
-                showToast(`👋 أهلاً بعودتك يا ${currentUser.full_name}!`);
-                return;
-            }
+        if (existingUserObj) {
+            // USER ALREADY REGISTERED -> Login immediately! No extra details requested!
+            currentUser = existingUserObj;
+            localStorage.setItem('souqna_user', JSON.stringify(currentUser));
+            updateAuthUI();
+            window.closeAuthModal();
+            showToast(`👋 أهلاً بعودتك يا ${currentUser.full_name || 'مستخدم سوق الرافدين'}!`);
+            return;
         }
 
         // NEW USER -> Advance to Step 3 (Fill profile details)
@@ -292,7 +316,12 @@ window.handleCompleteProfile = async function(event) {
             };
         }
 
+        // Save active user & save in registered users cache
         localStorage.setItem('souqna_user', JSON.stringify(currentUser));
+        const registeredLocal = JSON.parse(localStorage.getItem('souqna_registered_users') || '[]');
+        registeredLocal.push(currentUser);
+        localStorage.setItem('souqna_registered_users', JSON.stringify(registeredLocal));
+
         updateAuthUI();
         window.closeAuthModal();
         showToast(`🎉 تم إنشاء حسابك بنجاح! أهلاً وسهلاً بك يا ${currentUser.full_name}`);
