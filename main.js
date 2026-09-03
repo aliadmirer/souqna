@@ -121,7 +121,7 @@ async function sendEvolutionWhatsAppOTP(phone, code) {
 
     const messageText = `💬 رمز التحقق الخاص بك في منصة سوق الرافدين هو: *${code}*\n\nالرمز صالح لمدة 5 دقائق. يرجى عدم مشاركته مع أي شخص.`;
 
-    console.log(`💬 Sending Evolution WhatsApp OTP [${code}] to +${fullNumber}`);
+    console.log(`💬 Sending Evolution WhatsApp OTP to +${fullNumber}`);
 
     if (EVOLUTION_API_CONFIG.baseUrl && EVOLUTION_API_CONFIG.apiKey) {
         try {
@@ -183,14 +183,14 @@ window.handleSendOTP = async function(event) {
         document.getElementById('auth-step-1').classList.add('hidden');
         document.getElementById('auth-step-2').classList.remove('hidden');
 
-        showToast(`📲 تم إرسال رمز OTP (${generatedOTP}) إلى حسابك بالواتساب!`);
+        showToast('📲 تم إرسال رمز التحقق إلى حسابك في الواتساب بنجاح.');
     } catch (err) {
         console.error('Error sending OTP:', err);
         showToast('حدث خطأ أثناء إرسال الرمز.');
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="ri-whatsapp-line"></i> <span>إرسال رمز OTP عبر الواتساب</span>';
+            btn.innerHTML = '<i class="ri-whatsapp-line"></i> <span>إرسال رمز التحقق</span>';
         }
     }
 };
