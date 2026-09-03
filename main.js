@@ -14,13 +14,29 @@ const EVOLUTION_API_CONFIG = {
 
 let supabaseClient = null;
 
-// Application State
-let categoriesList = [];
-let locationsList = [];
-let allListings = [];
-let filteredListings = [];
-let favoritesSet = new Set(JSON.parse(localStorage.getItem('souqna_favs') || '[]'));
-let currentUser = JSON.parse(localStorage.getItem('souqna_user') || 'null');
+// Comprehensive list of all 18 Iraqi Governorates (No "العاصمة" word, Baghdad is Capital)
+const ALL_IRAQ_GOVERNORATES = [
+    { id: 1, province: 'بغداد', city_or_area: 'الكرادة / المنصور / الجادرية' },
+    { id: 2, province: 'البصرة', city_or_area: 'الجزائر / العشار / طويسة' },
+    { id: 3, province: 'أربيل', city_or_area: 'عينكاوا / شارع 60' },
+    { id: 4, province: 'النجف الأشرف', city_or_area: 'شارع المطار / حي الأفراد' },
+    { id: 5, province: 'كربلاء المقدسة', city_or_area: 'شارع السناتر / حي الحسين' },
+    { id: 6, province: 'نينوى', city_or_area: 'الموصل - المجموعة الثقافية' },
+    { id: 7, province: 'السليمانية', city_or_area: 'شارع سالم / عقاري' },
+    { id: 8, province: 'دهوك', city_or_area: 'دهوك سنتر' },
+    { id: 9, province: 'كركوك', city_or_area: 'طريق بغداد / القدس' },
+    { id: 10, province: 'بابل', city_or_area: 'الحلة / شارع 40' },
+    { id: 11, province: 'الأنبار', city_or_area: 'الرمادي / الفلوجة' },
+    { id: 12, province: 'ذي قار', city_or_area: 'الناصرية / شارع الحبوبي' },
+    { id: 13, province: 'واسط', city_or_area: 'الكوت / المشروع' },
+    { id: 14, province: 'القادسية', city_or_area: 'الديوانية / حي المعلمين' },
+    { id: 15, province: 'ميسان', city_or_area: 'العمارة / شارع دجلة' },
+    { id: 16, province: 'ديالى', city_or_area: 'بعقوبة / حي المعلمين' },
+    { id: 17, province: 'المثنى', city_or_area: 'السماوة / المجمع الحكومي' },
+    { id: 18, province: 'صلاح الدين', city_or_area: 'تكريت / سامراء' }
+];
+
+let selectedAdImages = [];
 
 // Auth Flow State
 let authPhoneNum = '';
@@ -426,21 +442,84 @@ async function fetchCategories() {
 }
 
 async function fetchLocations() {
-    const { data, error } = await supabaseClient
-        .from('locations')
-        .select('*')
-        .order('province', { ascending: true });
+    let fetched = [];
+    if (supabaseClient) {
+        const { data, error } = await supabaseClient
+            .from('locations')
+            .select('*')
+            .order('province', { ascending: true });
 
-    if (error) {
-        console.error('Fetch locations error:', error);
-        return;
+        if (!error && data) {
+            fetched = data;
+        }
     }
 
-    locationsList = data || [];
+    // Clean up fetched locations (replace "أربيل العاصمة" with "أربيل", etc.)
+    fetched = fetched.map(loc => {
+        let cleanProv = loc.province ? loc.province.replace('العاصمة', '').trim() : '';
+        if (cleanProv === 'اريل' || cleanProv === 'أربيل') cleanProv = 'أربيل';
+        return {
+            ...loc,
+            province: cleanProv
+        };
+    });
+
+    // Merge with ALL 18 Governorates
+    const existingProvinces = new Set(fetched.map(l => l.province));
+    ALL_IRAQ_GOVERNORATES.forEach(gov => {
+        if (!existingProvinces.has(gov.province)) {
+            fetched.push(gov);
+        }
+    });
+
+    locationsList = fetched;
     document.getElementById('stat-locations-count').innerText = locationsList.length;
 
     renderLocationSelects();
     renderCityChips();
+}
+
+window.handleImageSelect = function(event) {
+    const files = Array.from(event.target.files);
+    if (!files || files.length === 0) return;
+
+    files.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            selectedAdImages.push(e.target.result);
+            renderSelectedImagePreviews();
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
+window.removeSelectedImage = function(index) {
+    selectedAdImages.splice(index, 1);
+    renderSelectedImagePreviews();
+};
+
+function renderSelectedImagePreviews() {
+    const grid = document.getElementById('image-previews-grid');
+    if (!grid) return;
+
+    if (selectedAdImages.length === 0) {
+        grid.innerHTML = '';
+        grid.classList.add('hidden');
+        return;
+    }
+
+    grid.classList.remove('hidden');
+    let html = '';
+    selectedAdImages.forEach((imgData, idx) => {
+        html += `
+            <div class="preview-thumb-box">
+                <img src="${imgData}" alt="معاينة الصورة ${idx + 1}">
+                <button type="button" class="remove-thumb-btn" onclick="window.removeSelectedImage(${idx})" title="حذف الصورة">&times;</button>
+            </div>
+        `;
+    });
+    grid.innerHTML = html;
 }
 
 async function fetchListings() {
@@ -765,16 +844,15 @@ window.resetFilters = function() {
     applyFiltersAndRender();
 };
 
-/* --------------------------------------------------------------------------
-   8. Add New Listing Modal & Form Submission
-   -------------------------------------------------------------------------- */
+window.openAddListingModal = function() {
+    const modal = document.getElementById('add-listing-modal');
+    if (modal) modal.classList.remove('hidden');
+};
+
 function initEventListeners() {
     const addBtn = document.getElementById('open-add-listing-btn');
     if (addBtn) {
-        addBtn.addEventListener('click', () => {
-            const modal = document.getElementById('add-listing-modal');
-            if (modal) modal.classList.remove('hidden');
-        });
+        addBtn.addEventListener('click', window.openAddListingModal);
     }
 
     const favToggleBtn = document.getElementById('favorites-toggle-btn');
@@ -840,17 +918,31 @@ window.handleAddListingSubmit = async function(event) {
 
         const newListing = listingData[0];
 
+        // Prepare images to insert
+        let imagesToInsert = [];
+        if (selectedAdImages.length > 0) {
+            imagesToInsert = selectedAdImages.map((imgData, idx) => ({
+                listing_id: newListing.id,
+                image_url: imgData,
+                is_main: idx === 0
+            }));
+        } else {
+            imagesToInsert = [{
+                listing_id: newListing.id,
+                image_url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
+                is_main: true
+            }];
+        }
+
         const { error: imageError } = await supabaseClient
             .from('listing_images')
-            .insert([{
-                listing_id: newListing.id,
-                image_url: imageUrl,
-                is_main: true
-            }]);
+            .insert(imagesToInsert);
 
         if (imageError) console.error('Image insert error:', imageError);
 
         showToast('🚀 تم نشر إعلانك بنجاح في سوق الرافدين!');
+        selectedAdImages = [];
+        renderSelectedImagePreviews();
         window.closeAddListingModal();
         document.getElementById('add-listing-form').reset();
 
