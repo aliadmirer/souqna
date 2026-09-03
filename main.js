@@ -47,13 +47,20 @@ let existingUserObj = null;
 let currentFilterCategory = 'all';
 let currentFilterCity = 'all';
 let currentSearchQuery = '';
-let currentSort = 'newest';
+const ADMIN_PHONE_NUMBER = '07711790645';
+
+function isAdminUser(phone) {
+    if (!phone) return false;
+    const clean = phone.toString().replace(/[^0-9]/g, '');
+    return clean.endsWith('7711790645') || clean === '07711790645' || clean === '7711790645';
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     initSupabase();
     updateAuthUI();
     initEventListeners();
+    checkCplRoute();
     await loadInitialData();
 });
 
@@ -74,27 +81,54 @@ function initSupabase() {
    -------------------------------------------------------------------------- */
 function updateAuthUI() {
     const container = document.getElementById('auth-nav-container');
-    if (!container) return;
+    const adminNavBtn = document.getElementById('admin-nav-btn');
 
     if (currentUser) {
-        container.innerHTML = `
-            <div class="user-profile-menu">
-                <span class="user-avatar"><i class="ri-user-fill"></i></span>
-                <span class="user-name">${currentUser.full_name || 'مستخدم سوق الرافدين'}</span>
-                <button onclick="window.handleLogout()" class="btn-logout" title="تسجيل الخروج">
-                    <i class="ri-logout-box-r-line"></i>
-                </button>
-            </div>
-        `;
+        if (container) {
+            container.innerHTML = `
+                <div class="user-profile-menu">
+                    <span class="user-avatar"><i class="ri-user-fill"></i></span>
+                    <span class="user-name">${currentUser.full_name || 'مستخدم سوق الرافدين'}</span>
+                    <button onclick="window.handleLogout()" class="btn-logout" title="تسجيل الخروج">
+                        <i class="ri-logout-box-r-line"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        // Show admin button ONLY if logged in as Admin (07711790645)
+        if (adminNavBtn) {
+            if (isAdminUser(currentUser.phone)) {
+                adminNavBtn.classList.remove('hidden');
+            } else {
+                adminNavBtn.classList.add('hidden');
+            }
+        }
     } else {
-        container.innerHTML = `
-            <button class="btn btn-outline-nav" onclick="window.openAuthModal()">
-                <i class="ri-user-3-line"></i>
-                <span>تسجيل الدخول</span>
-            </button>
-        `;
+        if (container) {
+            container.innerHTML = `
+                <button class="btn btn-outline-nav" onclick="window.openAuthModal()">
+                    <i class="ri-user-3-line"></i>
+                    <span>تسجيل الدخول</span>
+                </button>
+            `;
+        }
+        if (adminNavBtn) adminNavBtn.classList.add('hidden');
     }
 }
+
+function checkCplRoute() {
+    const hash = (window.location.hash || '').toLowerCase();
+    const search = (window.location.search || '').toLowerCase();
+
+    if (hash === '#cpl' || search.includes('cpl')) {
+        const adminNavBtn = document.getElementById('admin-nav-btn');
+        if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+        window.openAdminPanel();
+    }
+}
+
+window.addEventListener('hashchange', checkCplRoute);
 
 function generateCaptchaMath() {
     const num1 = Math.floor(Math.random() * 9) + 1;
