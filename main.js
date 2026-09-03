@@ -845,6 +845,22 @@ window.resetFilters = function() {
 };
 
 window.openAddListingModal = function() {
+    if (!currentUser) {
+        showToast('🔑 يرجى تسجيل الدخول أو فتح حساب جديد أولاً لإضافة إعلانك.');
+        window.openAuthModal();
+        return;
+    }
+
+    // Quota Enforcement: Check user's posted listings count vs limit (Default max 3 free ads)
+    const userListingsCount = allListings.filter(l => l.user_id === currentUser.id).length;
+    const userLimit = currentUser.ads_limit || 3;
+
+    if (userListingsCount >= userLimit && !currentUser.is_pro_user) {
+        showToast(`⚠️ لقد وصلت للحد الأقصى للإعلانات المتاحة لحسابك (${userLimit} إعلانات). يرجى ترقية الباقة لمتابعة النشر.`);
+        window.openPricingModal(true); // Open pricing modal with warning banner!
+        return;
+    }
+
     const modal = document.getElementById('add-listing-modal');
     if (modal) modal.classList.remove('hidden');
 };
@@ -1056,3 +1072,247 @@ function showToast(message) {
         }, 4000);
     }
 }
+
+/* --------------------------------------------------------------------------
+   11. Pricing & Quota Management (نظام الباقات والحدود)
+   -------------------------------------------------------------------------- */
+window.openPricingModal = function(showWarning = false) {
+    const modal = document.getElementById('pricing-modal');
+    const warningBanner = document.getElementById('quota-warning-banner');
+
+    if (warningBanner) {
+        if (showWarning) warningBanner.classList.remove('hidden');
+        else warningBanner.classList.add('hidden');
+    }
+
+    if (modal) modal.classList.remove('hidden');
+};
+
+window.closePricingModal = function() {
+    const modal = document.getElementById('pricing-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.selectPlan = function(adsLimit, price, planName) {
+    if (!currentUser) {
+        showToast('يرجى تسجيل الدخول أولاً لطلب تفعيل الباقة.');
+        window.closePricingModal();
+        window.openAuthModal();
+        return;
+    }
+
+    showToast(`🎉 تم تسجيل طلبك في ${planName}! يرجى إرسال المبلغ عبر زين كاش أو آسياسيل أو تسديد للتفعيل المباشر.`);
+
+    // Direct WhatsApp contact to admin for instant package activation
+    const adminPhone = '07700000000';
+    const waText = encodeURIComponent(`السلام عليكم إداري سوق الرافدين، أرغب بتفعيل ${planName} لحسابي (${currentUser.full_name} - ${currentUser.phone}) وقد قمت بتحويل المبلغ.`);
+    window.open(`https://wa.me/964${adminPhone.slice(1)}?text=${waText}`, '_blank');
+};
+
+/* --------------------------------------------------------------------------
+   12. Admin Panel Management (لوحة تحكم الإدارة والتفعيل المباشر)
+   -------------------------------------------------------------------------- */
+let adminSelectedUserForActivation = null;
+
+window.openAdminPanel = function() {
+    const modal = document.getElementById('admin-modal');
+    if (modal) modal.classList.remove('hidden');
+};
+
+window.closeAdminPanel = function() {
+    const modal = document.getElementById('admin-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.verifyAdminPin = function() {
+    const pin = document.getElementById('admin-pin-code').value.trim();
+    if (pin === '2026' || pin === '1234' || pin === 'admin') {
+        document.getElementById('admin-pin-container').classList.add('hidden');
+        document.getElementById('admin-dashboard-content').classList.remove('hidden');
+        window.loadAdminData();
+        showToast('🔓 تم تسجيل الدخول إلى لوحة التحكم الإدارية بنجاح.');
+    } else {
+        showToast('❌ رمز الحماية غير صحيح (الرمز الافتراضي: 2026).');
+    }
+};
+
+window.switchAdminTab = function(tabName) {
+    const usersView = document.getElementById('admin-users-view');
+    const adsView = document.getElementById('admin-ads-view');
+    const usersTab = document.getElementById('tab-admin-users');
+    const adsTab = document.getElementById('tab-admin-ads');
+
+    if (tabName === 'users') {
+        usersView.classList.remove('hidden');
+        adsView.classList.add('hidden');
+        usersTab.classList.add('active');
+        adsTab.classList.remove('active');
+    } else {
+        adsView.classList.remove('hidden');
+        usersView.classList.add('hidden');
+        adsTab.classList.add('active');
+        usersTab.classList.remove('active');
+    }
+};
+
+window.loadAdminData = async function() {
+    let usersData = [];
+    let listingsData = allListings;
+
+    // 1. Fetch Users
+    if (supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient.from('users').select('*').order('created_at', { ascending: false });
+            if (!error && data) usersData = data;
+        } catch (e) {
+            console.error('Admin users fetch error:', e);
+        }
+    }
+
+    if (usersData.length === 0) {
+        // Fallback to local storage registered users
+        usersData = JSON.parse(localStorage.getItem('souqna_registered_users') || '[]');
+        if (currentUser && !usersData.find(u => u.phone === currentUser.phone)) {
+            usersData.push(currentUser);
+        }
+    }
+
+    // Update Stats
+    document.getElementById('admin-stat-users').innerText = usersData.length;
+    document.getElementById('admin-stat-ads').innerText = listingsData.length;
+    const proUsersCount = usersData.filter(u => (u.ads_limit && u.ads_limit > 3) || u.is_pro_user).length;
+    document.getElementById('admin-stat-subs').innerText = proUsersCount;
+
+    // Render Users Table
+    const usersTbody = document.getElementById('admin-users-tbody');
+    if (usersTbody) {
+        let html = '';
+        usersData.forEach(u => {
+            const adsCount = listingsData.filter(l => l.user_id === u.id).length;
+            const limit = u.ads_limit || 3;
+            const isPro = (limit > 3) || u.is_pro_user;
+
+            html += `
+                <tr>
+                    <td><strong>${u.full_name || 'مستخدم'}</strong></td>
+                    <td><code>${u.phone || 'بدون رقم'}</code></td>
+                    <td><strong>${adsCount}</strong> إعلان</td>
+                    <td><span class="${isPro ? 'badge-quota' : 'badge-quota-warning'}">${limit} إعلان</span></td>
+                    <td>${isPro ? '⚡ تاجر مميز' : 'مجاني (3)'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="window.openActivateModal('${u.id}', '${u.full_name || u.phone}', '${u.phone || ''}')">
+                            <i class="ri-vip-crown-line"></i> تفعيل باقة ⚡
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        usersTbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center;">لا يوجد مستخدمون حالياً</td></tr>';
+    }
+
+    // Render Ads Table
+    const adsTbody = document.getElementById('admin-ads-tbody');
+    if (adsTbody) {
+        let html = '';
+        listingsData.forEach(l => {
+            const dateStr = formatRelativeDate(l.created_at);
+            const prov = l.locations ? l.locations.province : 'العراق';
+
+            html += `
+                <tr>
+                    <td><strong>${l.title}</strong></td>
+                    <td><code>${l.price} د.ع</code></td>
+                    <td>${prov}</td>
+                    <td>${dateStr}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="window.deleteAdminListing(${l.id})" style="color:#ef4444;" title="حذف الإعلان">
+                            <i class="ri-delete-bin-line"></i> حذف
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        adsTbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;">لا توجد إعلانات حالياً</td></tr>';
+    }
+};
+
+window.openActivateModal = function(userId, userName, userPhone) {
+    adminSelectedUserForActivation = { userId, userName, userPhone };
+    document.getElementById('act-user-name').innerText = userName;
+    document.getElementById('act-user-phone').innerText = userPhone;
+    document.getElementById('admin-activate-modal').classList.remove('hidden');
+};
+
+window.closeActivateModal = function() {
+    document.getElementById('admin-activate-modal').classList.add('hidden');
+};
+
+window.confirmPackageActivation = async function() {
+    if (!adminSelectedUserForActivation) return;
+
+    const selectedLimit = parseInt(document.getElementById('act-package-select').value, 10);
+    const paymentMethod = document.getElementById('act-payment-method').value;
+
+    const { userId, userName, userPhone } = adminSelectedUserForActivation;
+
+    // 1. Update user in Supabase
+    if (supabaseClient) {
+        try {
+            await supabaseClient
+                .from('users')
+                .update({ ads_limit: selectedLimit, is_pro_user: true })
+                .eq('id', userId);
+
+            // Also record in subscriptions table
+            await supabaseClient
+                .from('subscriptions')
+                .insert([{
+                    user_id: userId,
+                    plan_name: `باقة ${selectedLimit} إعلان`,
+                    ads_limit: selectedLimit,
+                    payment_method: paymentMethod,
+                    status: 'active'
+                }]);
+        } catch (e) {
+            console.error('Package activation error:', e);
+        }
+    }
+
+    // 2. Update local state if current user
+    if (currentUser && (currentUser.id == userId || currentUser.phone == userPhone)) {
+        currentUser.ads_limit = selectedLimit;
+        currentUser.is_pro_user = true;
+        localStorage.setItem('souqna_user', JSON.stringify(currentUser));
+        updateAuthUI();
+    }
+
+    // 3. Update registered users cache
+    const registeredLocal = JSON.parse(localStorage.getItem('souqna_registered_users') || '[]');
+    const target = registeredLocal.find(u => u.id == userId || u.phone == userPhone);
+    if (target) {
+        target.ads_limit = selectedLimit;
+        target.is_pro_user = true;
+        localStorage.setItem('souqna_registered_users', JSON.stringify(registeredLocal));
+    }
+
+    showToast(`🎉 تم تفعيل باقة ${selectedLimit} إعلان للمستخدم (${userName}) بنجاح عبر (${paymentMethod})!`);
+    window.closeActivateModal();
+    await window.loadAdminData();
+};
+
+window.deleteAdminListing = async function(listingId) {
+    if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الإعلان؟')) return;
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('listings').delete().eq('id', listingId);
+        } catch (e) {
+            console.error('Delete error:', e);
+        }
+    }
+
+    allListings = allListings.filter(l => l.id !== listingId);
+    applyFiltersAndRender();
+    await window.loadAdminData();
+    showToast('تم حذف الإعلان بنجاح.');
+};

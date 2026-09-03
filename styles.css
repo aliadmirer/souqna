@@ -2077,217 +2077,407 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.8rem;
+    transition: transform var(--transition-fast);
+}
+
+.preview-thumb-box .remove-thumb-btn:hover {
+    transform: scale(1.15);
+    background: #dc2626;
+}
+
 /* ==========================================================================
-   Responsive Design System (Tablets & Mobile Devices)
+   Pricing & Merchant Packages (نظام الباقات والحدود)
    ========================================================================== */
-
-/* 1. Tablet Screens (max-width: 1024px) */
-@media (max-width: 1024px) {
-    .container {
-        padding: 0 1.25rem;
-    }
-
-    .hero-title {
-        font-size: 2.3rem;
-    }
-
-    .search-preview-box {
-        padding: 1rem;
-    }
-
-    .listings-grid {
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1.25rem;
-    }
-
-    .category-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 1rem;
-    }
-
-    .modal-card {
-        max-width: 90vw;
-    }
+.icon-gold {
+    color: #f59e0b;
 }
 
-/* 2. Mobile & Tablet Touch Screens (max-width: 768px) */
+.quota-warning-banner {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.quota-warning-banner i {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.quota-warning-banner strong {
+    font-size: 1rem;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.quota-warning-banner p {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.pricing-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.pricing-card {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    transition: all var(--transition-fast);
+}
+
+.pricing-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+.pricing-card.featured-plan {
+    border: 2px solid var(--primary);
+    background: var(--bg-surface);
+    box-shadow: 0 10px 25px rgba(134, 184, 23, 0.2);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -12px;
+    right: 50%;
+    transform: translateX(50%);
+    background: var(--primary);
+    color: var(--secondary);
+    font-size: 0.75rem;
+    font-weight: 900;
+    padding: 0.25rem 0.8rem;
+    border-radius: 50px;
+    white-space: nowrap;
+}
+
+.pricing-card-header {
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.plan-name {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.plan-price {
+    font-family: var(--font-heading);
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--primary);
+}
+
+.plan-price span {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.plan-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+}
+
+.feature-item {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-item i {
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.btn-plan-select {
+    width: 100%;
+}
+
+/* Payment Methods Section */
+.payment-methods-box {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    padding: 1.25rem;
+}
+
+.payment-methods-box h4 {
+    font-size: 1rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.payment-channels-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.payment-channel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.channel-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.icon-zain { background: rgba(234, 88, 12, 0.15); color: #ea580c; }
+.icon-asia { background: rgba(225, 29, 72, 0.15); color: #e11d48; }
+.icon-tasdeed { background: rgba(37, 99, 235, 0.15); color: #2563eb; }
+
+.payment-channel strong {
+    font-size: 0.85rem;
+    display: block;
+}
+
+.payment-channel p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.payment-channel code {
+    background: var(--bg-main);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 800;
+    color: var(--primary-hover);
+}
+
+.payment-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 0;
+}
+
+/* ==========================================================================
+   Admin Panel Styling (لوحة تحكم الإدارة)
+   ========================================================================== */
+.admin-pin-box {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.lock-icon {
+    font-size: 3.5rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.admin-pin-box h3 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+}
+
+.admin-pin-box p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.pin-input-group {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+}
+
+.pin-input-group input {
+    width: 140px;
+    text-align: center;
+    font-size: 1.4rem;
+    letter-spacing: 6px;
+    font-weight: 900;
+}
+
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-stat-card {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-stat-card i {
+    font-size: 2rem;
+    color: var(--primary);
+}
+
+.admin-stat-card strong {
+    font-size: 1.5rem;
+    font-weight: 900;
+    display: block;
+    line-height: 1;
+}
+
+.admin-stat-card span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 0.6rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.admin-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem 1.2rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all var(--transition-fast);
+}
+
+.admin-tab.active {
+    color: var(--primary-hover);
+    border-bottom-color: var(--primary);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.panel-header h4 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.admin-table th, .admin-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.admin-table th {
+    background: var(--bg-main);
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+.badge-quota {
+    background: rgba(134, 184, 23, 0.15);
+    color: var(--primary-hover);
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+    border-radius: 50px;
+}
+
+.badge-quota-warning {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+    border-radius: 50px;
+}
+
+.btn-sm {
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 8px !important;
+}
+
+/* Responsive Breakpoints */
 @media (max-width: 768px) {
-    /* Navbar Mobile Layout */
-    .navbar {
-        padding: 0.6rem 0;
-    }
-
-    .navbar-container {
-        flex-wrap: wrap;
-        gap: 0.6rem;
-    }
-
-    .nav-actions {
-        gap: 0.4rem;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-    }
-
-    .btn-outline-nav, .btn-post-ad {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.75rem;
-    }
-
-    .country-badge {
-        display: none; /* Hide country badge on mobile to save space */
-    }
-
-    /* Hero Section Mobile */
-    .hero-section {
-        padding: 2rem 0 1.5rem;
-    }
-
-    .hero-title {
-        font-size: 1.75rem;
-        line-height: 1.35;
-    }
-
-    .hero-description {
-        font-size: 0.9rem;
-    }
-
-    .search-preview-form {
-        flex-direction: column;
-        gap: 0.6rem;
-    }
-
-    .search-input-wrapper {
-        width: 100%;
-    }
-
-    .btn-search-hero {
-        width: 100%;
-        justify-content: center;
-        padding: 0.75rem;
-    }
-
-    /* Category Pills Bar Touch Scroll */
-    .category-pills-bar {
-        overflow-x: auto;
-        white-space: nowrap;
-        padding-bottom: 0.5rem;
-        -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x mandatory;
-    }
-
-    .cat-pill {
-        flex: 0 0 auto;
-        scroll-snap-align: start;
-    }
-
-    /* Grids & Cards Mobile */
-    .listings-grid {
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1rem;
-    }
-
-    .category-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.8rem;
-    }
-
-    .category-card {
-        padding: 1rem 0.8rem;
-    }
-
-    .category-card h3 {
-        font-size: 0.95rem;
-    }
-
-    /* Modals Mobile Touch Design */
-    .modal-overlay {
-        padding: 0.8rem;
-    }
-
-    .modal-card {
-        max-width: 96vw;
-        max-height: 94vh;
-        border-radius: 20px;
-    }
-
-    .modal-header {
-        padding: 1rem;
-    }
-
-    .modal-body {
-        padding: 1rem;
-        gap: 1rem;
-    }
-
-    .modal-footer {
-        flex-direction: column-reverse;
-        gap: 0.6rem;
-    }
-
-    .modal-footer button {
-        width: 100%;
-    }
-
-    .form-row {
-        grid-template-columns: 1fr !important;
-        gap: 0.8rem;
-    }
-
-    .captcha-body {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.8rem;
-    }
-
-    .captcha-body input#captcha-answer {
-        width: 100% !important;
-        max-width: 180px;
-    }
-
-    .detail-container {
+    .pricing-cards-grid {
         grid-template-columns: 1fr;
-        padding: 1rem;
-        gap: 1rem;
     }
-
-    .detail-gallery {
-        height: 220px;
+    .payment-channels-list {
+        grid-template-columns: 1fr;
     }
-
-    .detail-price {
-        font-size: 1.6rem;
+    .admin-stats-grid {
+        grid-template-columns: 1fr;
     }
-}
-
-/* 3. Small Mobile Devices (max-width: 480px) */
-@media (max-width: 480px) {
-    .brand-tag {
-        display: none; /* Hide tag badge for ultra compact header */
-    }
-
-    .brand-name {
-        font-size: 1.25rem;
-    }
-
-    .listings-grid {
-        grid-template-columns: 1fr; /* Single full-width card on phone */
-    }
-
-    .card-image-box {
-        height: 190px;
-    }
-
-    .footer-container {
-        flex-direction: column;
-        text-align: center;
-        gap: 1.2rem;
-    }
-
-    .footer-socials {
-        justify-content: center;
+    .modal-card.modal-lg {
+        max-width: 96vw;
     }
 }
-
-
-
 

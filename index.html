@@ -55,6 +55,12 @@
                     <i class="ri-add-line"></i>
                     <span>إضافة إعلان مجاناً</span>
                 </button>
+                <button class="btn-icon-nav" onclick="window.openPricingModal()" title="باقات التجار والاشتراكات">
+                    <i class="ri-vip-crown-line icon-gold"></i>
+                </button>
+                <button class="btn-icon-nav" onclick="window.openAdminPanel()" title="لوحة التحكم الإدارية">
+                    <i class="ri-shield-keyhole-line"></i>
+                </button>
                 <button id="favorites-toggle-btn" class="btn-icon-nav" title="المفضلة">
                     <i class="ri-heart-3-line"></i>
                     <span id="fav-badge" class="badge">0</span>
@@ -452,6 +458,270 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal: Pricing & Merchant Subscriptions (نظام الباقات والحدود) -->
+    <div id="pricing-modal" class="modal-overlay hidden">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3><i class="ri-vip-crown-fill icon-gold"></i> ترقية حساب التاجر وباقات الإعلانات</h3>
+                <button class="modal-close" onclick="window.closePricingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="quota-warning-banner hidden" id="quota-warning-banner">
+                    <i class="ri-error-warning-fill"></i>
+                    <div>
+                        <strong>لقد وصلت للحد الأقصى للإعلانات المجانية (3 إعلانات)!</strong>
+                        <p>اختر إحدى الباقات التجارية التالية لمتابعة نشر منتجاتك وإعلاناتك في سوق الرافدين.</p>
+                    </div>
+                </div>
+
+                <!-- Pricing Cards Grid -->
+                <div class="pricing-cards-grid">
+                    <!-- Package 1: 25 ads -->
+                    <div class="pricing-card">
+                        <div class="pricing-card-header">
+                            <span class="plan-name">باقة المبتدئ</span>
+                            <div class="plan-price">10,000 <span>د.ع</span></div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> <strong>25 إعلان</strong> في الشهر</div>
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> ظهور في نتائج البحث المباشرة</div>
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> تواصل عبر الواتساب والاتصالات</div>
+                        </div>
+                        <button class="btn btn-primary btn-plan-select" onclick="window.selectPlan(25, 10000, 'باقة المبتدئ (25 إعلان)')">
+                            <span>طلب التفعيل الآن</span>
+                        </button>
+                    </div>
+
+                    <!-- Package 2: 50 ads (Popular) -->
+                    <div class="pricing-card featured-plan">
+                        <div class="popular-badge">الأكثر طلباً ⭐</div>
+                        <div class="pricing-card-header">
+                            <span class="plan-name">الباقة الفضية</span>
+                            <div class="plan-price">18,000 <span>د.ع</span></div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> <strong>50 إعلان</strong> في الشهر</div>
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> شارة تاجر فضي مميز</div>
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> دعم فني وإعلاء نتائج</div>
+                        </div>
+                        <button class="btn btn-primary btn-plan-select" onclick="window.selectPlan(50, 18000, 'الباقة الفضية (50 إعلان)')">
+                            <span>طلب التفعيل الآن</span>
+                        </button>
+                    </div>
+
+                    <!-- Package 3: 100 ads -->
+                    <div class="pricing-card">
+                        <div class="pricing-card-header">
+                            <span class="plan-name">الباقة الذهبية</span>
+                            <div class="plan-price">30,000 <span>د.ع</span></div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> <strong>100 إعلان</strong> في الشهر</div>
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> شارة تاجر ذهبي موثق</div>
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> إحصائيات وإبراز الإعلانات</div>
+                        </div>
+                        <button class="btn btn-primary btn-plan-select" onclick="window.selectPlan(100, 30000, 'الباقة الذهبية (100 إعلان)')">
+                            <span>طلب التفعيل الآن</span>
+                        </button>
+                    </div>
+
+                    <!-- Package 4: 200 ads -->
+                    <div class="pricing-card">
+                        <div class="pricing-card-header">
+                            <span class="plan-name">باقة الشركات والتجار</span>
+                            <div class="plan-price">50,000 <span>د.ع</span></div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> <strong>200 إعلان</strong> في الشهر</div>
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> حساب شركتي متكامل</div>
+                            <div class="feature-item"><i class="ri-checkbox-circle-fill"></i> أولوية قصوى ودعم تجاري</div>
+                        </div>
+                        <button class="btn btn-primary btn-plan-select" onclick="window.selectPlan(200, 50000, 'باقة الشركات (200 إعلان)')">
+                            <span>طلب التفعيل الآن</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Payment Methods Info Section -->
+                <div class="payment-methods-box">
+                    <h4><i class="ri-bank-card-fill icon-green"></i> طرق الدفع والتسديد المحلية المتاحة 🇮🇶:</h4>
+                    <div class="payment-channels-list">
+                        <div class="payment-channel">
+                            <span class="channel-icon icon-zain"><i class="ri-wallet-3-fill"></i></span>
+                            <div>
+                                <strong>زين كاش (ZainCash)</strong>
+                                <p>تحويل إلى محفظة: <code>07700000000</code></p>
+                            </div>
+                        </div>
+                        <div class="payment-channel">
+                            <span class="channel-icon icon-asia"><i class="ri-cellphone-fill"></i></span>
+                            <div>
+                                <strong>آسياسيل (Asiacell)</strong>
+                                <p>تحويل رصيد أو كارتات إلى: <code>07700000000</code></p>
+                            </div>
+                        </div>
+                        <div class="payment-channel">
+                            <span class="channel-icon icon-tasdeed"><i class="ri-bank-card-line"></i></span>
+                            <div>
+                                <strong>منصة تسديد / ماستر كارد (Tasdeed)</strong>
+                                <p>الدفع المباشر بالفيزا والماستر كارد</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="payment-note">بعد تحويل المبلغ عبر إحدى الطرق، يرجى تزويد الإدارة بتأكيد الدفع لتفعيل الباقة فوراً.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Admin Panel (لوحة تحكم الإدارة) -->
+    <div id="admin-modal" class="modal-overlay hidden">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3><i class="ri-shield-keyhole-fill icon-green"></i> لوحة تحكم الإدارة - سوق الرافدين 🛡️</h3>
+                <button class="modal-close" onclick="window.closeAdminPanel()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Admin PIN Lock Check -->
+                <div id="admin-pin-container" class="admin-pin-box">
+                    <i class="ri-lock-password-fill lock-icon"></i>
+                    <h3>الدخول إلى لوحة التحكم</h3>
+                    <p>يرجى إدخال رمز الحماية للإدارة (الافتراضي: 2026):</p>
+                    <div class="pin-input-group">
+                        <input type="password" id="admin-pin-code" placeholder="••••" maxlength="6" autofocus>
+                        <button class="btn btn-primary" onclick="window.verifyAdminPin()">دخول</button>
+                    </div>
+                </div>
+
+                <!-- Admin Dashboard Content (Hidden until PIN verified) -->
+                <div id="admin-dashboard-content" class="admin-dashboard-content hidden">
+                    <!-- Admin Stats Summary Bar -->
+                    <div class="admin-stats-grid">
+                        <div class="admin-stat-card">
+                            <i class="ri-group-line"></i>
+                            <div>
+                                <strong id="admin-stat-users">0</strong>
+                                <span>المستخدمين المسجلين</span>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <i class="ri-article-line"></i>
+                            <div>
+                                <strong id="admin-stat-ads">0</strong>
+                                <span>إجمالي الإعلانات</span>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <i class="ri-vip-crown-line"></i>
+                            <div>
+                                <strong id="admin-stat-subs">0</strong>
+                                <span>الباقات الفعالة</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Tabs -->
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" id="tab-admin-users" onclick="window.switchAdminTab('users')">
+                            <i class="ri-user-settings-line"></i> إدارة المستخدمين والباقات
+                        </button>
+                        <button class="admin-tab" id="tab-admin-ads" onclick="window.switchAdminTab('ads')">
+                            <i class="ri-list-check-2"></i> إدارة الإعلانات
+                        </button>
+                    </div>
+
+                    <!-- Users & Subscription Manager View -->
+                    <div id="admin-users-view" class="admin-view-panel">
+                        <div class="panel-header">
+                            <h4>قائمة المستخدمين وتفعيل باقات التجار ⚡</h4>
+                            <button class="btn btn-secondary btn-sm" onclick="window.loadAdminData()"><i class="ri-refresh-line"></i> تحديث البيانات</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>المستخدم</th>
+                                        <th>رقم الهاتف</th>
+                                        <th>الإعلانات</th>
+                                        <th>حد الباقة الحالي</th>
+                                        <th>الحالة</th>
+                                        <th>إجراء التفعيل المباشر</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-users-tbody">
+                                    <!-- Users rows loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Ads Manager View -->
+                    <div id="admin-ads-view" class="admin-view-panel hidden">
+                        <div class="panel-header">
+                            <h4>قائمة الإعلانات المنشورة</h4>
+                            <button class="btn btn-secondary btn-sm" onclick="window.loadAdminData()"><i class="ri-refresh-line"></i> تحديث</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>الإعلان</th>
+                                        <th>السعر</th>
+                                        <th>المحافظة</th>
+                                        <th>تاريخ النشر</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-ads-tbody">
+                                    <!-- Ads rows loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Activate Package Action Modal for Admin -->
+    <div id="admin-activate-modal" class="modal-overlay hidden">
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3><i class="ri-vip-crown-fill icon-gold"></i> تفعيل باقة تجارية لمستخدم</h3>
+                <button class="modal-close" onclick="window.closeActivateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>المستخدم: <strong id="act-user-name">...</strong> (<span id="act-user-phone">...</span>)</p>
+
+                <div class="form-group">
+                    <label for="act-package-select">اختر الباقة المراد تفعيلها *</label>
+                    <select id="act-package-select">
+                        <option value="25">باقة 25 إعلان - 10,000 د.ع</option>
+                        <option value="50">باقة 50 إعلان - 18,000 د.ع (فضية)</option>
+                        <option value="100">باقة 100 إعلان - 30,000 د.ع (ذهبية)</option>
+                        <option value="200">باقة 200 إعلان - 50,000 د.ع (شركات)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="act-payment-method">طريقة التسديد المؤكدة *</label>
+                    <select id="act-payment-method">
+                        <option value="زين كاش (ZainCash)">محفظة زين كاش (ZainCash)</option>
+                        <option value="آسياسيل (Asiacell)">رصيد / كارتات آسياسيل (Asiacell)</option>
+                        <option value="منصة تسديد (Tasdeed)">منصة تسديد / ماستر كارد (Tasdeed)</option>
+                    </select>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="window.closeActivateModal()">إلغاء</button>
+                    <button class="btn btn-primary" onclick="window.confirmPackageActivation()">
+                        <i class="ri-check-double-line"></i> <span>تأكيد التفعيل وحفظ بـ Supabase</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
