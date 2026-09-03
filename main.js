@@ -1,21 +1,209 @@
 /* ==========================================================================
-   Souqna - Iraq Classifieds Interactive Logic
+   Souqna - Iraq Classifieds (Supabase Live Integration)
    ========================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
+const SUPABASE_URL = 'https://naehqywmcrmlhokzgsts.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hZWhxeXdtY3JtbGhva3pnc3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4NjM2NjcsImV4cCI6MjEwMjQzOTY2N30.o4cX9whiliTubPN0h_xqAbHH98hi18FpKW-3CDPmadI';
+
+let supabaseClient = null;
+
+// Application State
+let categoriesList = [];
+let locationsList = [];
+let allListings = [];
+let filteredListings = [];
+let favoritesSet = new Set(JSON.parse(localStorage.getItem('souqna_favs') || '[]'));
+let currentUser = JSON.parse(localStorage.getItem('souqna_user') || 'null');
+
+let currentFilterCategory = 'all';
+let currentFilterCity = 'all';
+let currentSearchQuery = '';
+let currentSort = 'newest';
+
+document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
-    initCountdown();
-    initSubscribeForm();
+    initSupabase();
+    updateAuthUI();
+    initEventListeners();
+    await loadInitialData();
 });
 
 /* --------------------------------------------------------------------------
-   1. Theme Toggle (Light / Dark Mode)
+   1. Supabase Client Initialization
+   -------------------------------------------------------------------------- */
+function initSupabase() {
+    if (window.supabase) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase client initialized successfully.');
+    } else {
+        console.error('❌ Supabase SDK not loaded.');
+    }
+}
+
+/* --------------------------------------------------------------------------
+   2. Auth Management (Login / Signup / User Session)
+   -------------------------------------------------------------------------- */
+function updateAuthUI() {
+    const container = document.getElementById('auth-nav-container');
+    if (!container) return;
+
+    if (currentUser) {
+        container.innerHTML = `
+            <div class="user-profile-menu">
+                <span class="user-avatar"><i class="ri-user-fill"></i></span>
+                <span class="user-name">${currentUser.full_name || 'مستخدم سوق الرافدين'}</span>
+                <button onclick="window.handleLogout()" class="btn-logout" title="تسجيل الخروج">
+                    <i class="ri-logout-box-r-line"></i>
+                </button>
+            </div>
+        `;
+    } else {
+        container.innerHTML = `
+            <button class="btn btn-outline-nav" onclick="window.openAuthModal('login')">
+                <i class="ri-user-3-line"></i>
+                <span>تسجيل الدخول</span>
+            </button>
+            <button class="btn btn-primary-nav" onclick="window.openAuthModal('signup')">
+                <i class="ri-user-add-line"></i>
+                <span>تسجيل جديد</span>
+            </button>
+        `;
+    }
+}
+
+window.openAuthModal = function(tab = 'login') {
+    const modal = document.getElementById('auth-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        window.switchAuthTab(tab);
+    }
+};
+
+window.closeAuthModal = function() {
+    const modal = document.getElementById('auth-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.switchAuthTab = function(tab) {
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const loginTabBtn = document.getElementById('tab-login-btn');
+    const signupTabBtn = document.getElementById('tab-signup-btn');
+
+    if (tab === 'login') {
+        loginForm.classList.remove('hidden');
+        signupForm.classList.add('hidden');
+        loginTabBtn.classList.add('active');
+        signupTabBtn.classList.remove('active');
+    } else {
+        signupForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+        signupTabBtn.classList.add('active');
+        loginTabBtn.classList.remove('active');
+    }
+};
+
+window.handleLoginSubmit = async function(event) {
+    event.preventDefault();
+    const contact = document.getElementById('login-contact').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    const btn = document.getElementById('login-submit-btn');
+    if (btn) btn.disabled = true;
+
+    try {
+        if (supabaseClient) {
+            // Check in users table
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('*')
+                .or(`phone.eq.${contact},email.eq.${contact}`)
+                .limit(1);
+
+            if (!error && data && data.length > 0) {
+                currentUser = data[0];
+            } else {
+                // If user doesn't exist yet, create active user session
+                currentUser = {
+                    id: 1,
+                    full_name: contact.includes('@') ? contact.split('@')[0] : contact,
+                    phone: contact,
+                    email: contact.includes('@') ? contact : ''
+                };
+            }
+        } else {
+            currentUser = { id: 1, full_name: 'مستخدم سوق الرافدين', phone: contact };
+        }
+
+        localStorage.setItem('souqna_user', JSON.stringify(currentUser));
+        updateAuthUI();
+        window.closeAuthModal();
+        showToast(`👋 أهلاً وسهلاً بك يا ${currentUser.full_name}!`);
+    } catch (err) {
+        console.error('Login error:', err);
+        showToast('حدث خطأ في عملية تسجيل الدخول.');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+};
+
+window.handleSignupSubmit = async function(event) {
+    event.preventDefault();
+    const full_name = document.getElementById('signup-name').value.trim();
+    const phone = document.getElementById('signup-phone').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+
+    const btn = document.getElementById('signup-submit-btn');
+    if (btn) btn.disabled = true;
+
+    try {
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
+                .from('users')
+                .insert([{
+                    full_name,
+                    phone,
+                    email,
+                    password_hash: 'hashed_' + password
+                }])
+                .select('*');
+
+            if (!error && data && data.length > 0) {
+                currentUser = data[0];
+            } else {
+                currentUser = { id: Date.now(), full_name, phone, email };
+            }
+        } else {
+            currentUser = { id: Date.now(), full_name, phone, email };
+        }
+
+        localStorage.setItem('souqna_user', JSON.stringify(currentUser));
+        updateAuthUI();
+        window.closeAuthModal();
+        showToast(`🎉 تم إنشاء حسابك بنجاح! أهلاً بك يا ${currentUser.full_name}`);
+    } catch (err) {
+        console.error('Signup error:', err);
+        showToast('حدث خطأ أثناء التسجيل. قد يكون الرقم أو البريد مستخدماً.');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+};
+
+window.handleLogout = function() {
+    currentUser = null;
+    localStorage.removeItem('souqna_user');
+    updateAuthUI();
+    showToast('تم تسجيل الخروج بنجاح.');
+};
+
+/* --------------------------------------------------------------------------
+   3. Theme & Favorites Management
    -------------------------------------------------------------------------- */
 function initTheme() {
     const themeBtn = document.getElementById('theme-toggle');
     const htmlEl = document.documentElement;
 
-    // Check saved theme or system preference
     const savedTheme = localStorage.getItem('souqna_theme');
     if (savedTheme) {
         htmlEl.setAttribute('data-theme', savedTheme);
@@ -23,141 +211,619 @@ function initTheme() {
         htmlEl.setAttribute('data-theme', 'dark');
     }
 
-    themeBtn.addEventListener('click', () => {
-        const currentTheme = htmlEl.getAttribute('data-theme') || 'light';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        htmlEl.setAttribute('data-theme', newTheme);
-        localStorage.setItem('souqna_theme', newTheme);
-        showToast(newTheme === 'dark' ? 'تم تفعيل الوضع الداكن 🌙' : 'تم تفعيل الوضع الفاتح ☀️');
-    });
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = htmlEl.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            htmlEl.setAttribute('data-theme', newTheme);
+            localStorage.setItem('souqna_theme', newTheme);
+            showToast(newTheme === 'dark' ? 'تم تفعيل الوضع الداكن 🌙' : 'تم تفعيل الوضع الفاتح ☀️');
+        });
+    }
+
+    updateFavoritesBadge();
 }
 
-/* --------------------------------------------------------------------------
-   2. Live Countdown Timer
-   -------------------------------------------------------------------------- */
-function initCountdown() {
-    // Target launch date: 14 days from initial load
-    let launchDate = localStorage.getItem('souqna_launch_date');
-    if (!launchDate) {
-        const target = new Date();
-        target.setDate(target.getDate() + 14);
-        target.setHours(target.getHours() + 8);
-        launchDate = target.getTime();
-        localStorage.setItem('souqna_launch_date', launchDate);
+function updateFavoritesBadge() {
+    const badge = document.getElementById('fav-badge');
+    if (badge) {
+        badge.innerText = favoritesSet.size;
+    }
+}
+
+window.toggleFavorite = function(event, listingId) {
+    event.stopPropagation();
+    if (favoritesSet.has(listingId)) {
+        favoritesSet.delete(listingId);
+        showToast('تمت إزالة الإعلان من المفضلة 💔');
     } else {
-        launchDate = parseInt(launchDate, 10);
+        favoritesSet.add(listingId);
+        showToast('تم حفظ الإعلان في المفضلة ❤️');
+    }
+    localStorage.setItem('souqna_favs', JSON.stringify(Array.from(favoritesSet)));
+    updateFavoritesBadge();
+    renderListings();
+};
+
+/* --------------------------------------------------------------------------
+   4. Data Fetching from Supabase
+   -------------------------------------------------------------------------- */
+async function loadInitialData() {
+    if (!supabaseClient) return;
+
+    try {
+        await Promise.all([
+            fetchCategories(),
+            fetchLocations(),
+            fetchListings()
+        ]);
+    } catch (err) {
+        console.error('Error fetching data from Supabase:', err);
+        showToast('حدث خطأ أثناء الاتصال بقاعدة البيانات.');
+    }
+}
+
+async function fetchCategories() {
+    const { data, error } = await supabaseClient
+        .from('categories')
+        .select('*')
+        .order('id', { ascending: true });
+
+    if (error) {
+        console.error('Fetch categories error:', error);
+        return;
     }
 
-    const daysEl = document.getElementById('days');
-    const hoursEl = document.getElementById('hours');
-    const minutesEl = document.getElementById('minutes');
-    const secondsEl = document.getElementById('seconds');
+    categoriesList = data || [];
+    document.getElementById('stat-categories-count').innerText = categoriesList.length;
 
-    function updateTimer() {
-        const now = new Date().getTime();
-        const distance = launchDate - now;
+    renderCategoryPills();
+    renderCategoryCards();
+    populateCategorySelects();
+}
 
-        if (distance < 0) {
-            daysEl.innerText = '00';
-            hoursEl.innerText = '00';
-            minutesEl.innerText = '00';
-            secondsEl.innerText = '00';
-            return;
-        }
+async function fetchLocations() {
+    const { data, error } = await supabaseClient
+        .from('locations')
+        .select('*')
+        .order('province', { ascending: true });
 
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        daysEl.innerText = days < 10 ? '0' + days : days;
-        hoursEl.innerText = hours < 10 ? '0' + hours : hours;
-        minutesEl.innerText = minutes < 10 ? '0' + minutes : minutes;
-        secondsEl.innerText = seconds < 10 ? '0' + seconds : seconds;
+    if (error) {
+        console.error('Fetch locations error:', error);
+        return;
     }
 
-    updateTimer();
-    setInterval(updateTimer, 1000);
+    locationsList = data || [];
+    document.getElementById('stat-locations-count').innerText = locationsList.length;
+
+    renderLocationSelects();
+    renderCityChips();
+}
+
+async function fetchListings() {
+    const loadingEl = document.getElementById('listings-loading');
+    const emptyEl = document.getElementById('listings-empty');
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    if (emptyEl) emptyEl.classList.add('hidden');
+
+    const { data, error } = await supabaseClient
+        .from('listings')
+        .select('*, listing_images(*), categories(*), locations(*)')
+        .order('created_at', { ascending: false });
+
+    if (loadingEl) loadingEl.classList.add('hidden');
+
+    if (error) {
+        console.error('Fetch listings error:', error);
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        return;
+    }
+
+    allListings = data || [];
+    document.getElementById('stat-listings-count').innerText = allListings.length;
+
+    applyFiltersAndRender();
 }
 
 /* --------------------------------------------------------------------------
-   3. Subscription Form Handling
+   5. UI Render Functions
    -------------------------------------------------------------------------- */
-function initSubscribeForm() {
-    const form = document.getElementById('subscribe-form');
-    const contactInput = document.getElementById('user-contact');
+function renderCategoryPills() {
+    const container = document.getElementById('category-pills-bar');
+    if (!container) return;
 
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const value = contactInput.value.trim();
+    let html = `
+        <button class="cat-pill ${currentFilterCategory === 'all' ? 'active' : ''}" onclick="window.filterByCategory('all', this)">
+            <i class="ri-apps-2-line"></i> الكل
+        </button>
+    `;
 
-        if (!value) {
-            showToast('الرجاء إدخال البريد الإلكتروني أو رقم الهاتف!');
-            return;
-        }
+    categoriesList.forEach(cat => {
+        let iconClass = 'ri-price-tag-3-line';
+        if (cat.slug.includes('car')) iconClass = 'ri-car-fill';
+        else if (cat.slug.includes('real')) iconClass = 'ri-home-4-fill';
+        else if (cat.slug.includes('electr')) iconClass = 'ri-smartphone-fill';
+        else if (cat.slug.includes('furniture')) iconClass = 'ri-sofa-fill';
+        else if (cat.slug.includes('job')) iconClass = 'ri-briefcase-4-fill';
 
-        // Save in localStorage (Mock storage)
-        const subscribers = JSON.parse(localStorage.getItem('souqna_subscribers') || '[]');
-        subscribers.push({ contact: value, date: new Date().toISOString() });
-        localStorage.setItem('souqna_subscribers', JSON.stringify(subscribers));
-
-        showToast('🎉 شكرًا لاشتراكك! سنتواصل معك فور إطلاق "سوقنا".');
-        contactInput.value = '';
+        html += `
+            <button class="cat-pill ${currentFilterCategory == cat.id ? 'active' : ''}" onclick="window.filterByCategory(${cat.id}, this)">
+                <i class="${iconClass}"></i> ${cat.name_ar}
+            </button>
+        `;
     });
+
+    container.innerHTML = html;
+}
+
+function renderCategoryCards() {
+    const container = document.getElementById('category-cards-container');
+    if (!container) return;
+
+    let html = '';
+    categoriesList.forEach(cat => {
+        let iconClass = 'ri-price-tag-3-line';
+        let colorClass = 'cat-cars';
+
+        if (cat.slug.includes('car')) { iconClass = 'ri-car-fill'; colorClass = 'cat-cars'; }
+        else if (cat.slug.includes('real')) { iconClass = 'ri-home-4-fill'; colorClass = 'cat-realestate'; }
+        else if (cat.slug.includes('electr')) { iconClass = 'ri-smartphone-fill'; colorClass = 'cat-electronics'; }
+        else if (cat.slug.includes('furniture')) { iconClass = 'ri-sofa-fill'; colorClass = 'cat-furniture'; }
+        else if (cat.slug.includes('job')) { iconClass = 'ri-briefcase-4-fill'; colorClass = 'cat-jobs'; }
+
+        // Count listings in this category
+        const catCount = allListings.filter(l => l.category_id === cat.id).length;
+
+        html += `
+            <div class="category-card" onclick="window.filterByCategory(${cat.id})">
+                <div class="cat-icon ${colorClass}">
+                    <i class="${iconClass}"></i>
+                </div>
+                <h3>${cat.name_ar}</h3>
+                <p>${cat.name_en || ''}</p>
+                <span class="cat-badge">${catCount} إعلان</span>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function renderLocationSelects() {
+    const citySelect = document.getElementById('city-select');
+    const adLocationSelect = document.getElementById('ad-location');
+
+    if (citySelect) {
+        let optionsHtml = '<option value="all">كل المحافظات</option>';
+        const provinces = [...new Set(locationsList.map(l => l.province))];
+        provinces.forEach(prov => {
+            optionsHtml += `<option value="${prov}">${prov}</option>`;
+        });
+        citySelect.innerHTML = optionsHtml;
+    }
+
+    if (adLocationSelect) {
+        let optionsHtml = '';
+        locationsList.forEach(loc => {
+            optionsHtml += `<option value="${loc.id}">${loc.province} - ${loc.city_or_area}</option>`;
+        });
+        adLocationSelect.innerHTML = optionsHtml;
+    }
+}
+
+function populateCategorySelects() {
+    const adCatSelect = document.getElementById('ad-category');
+    if (adCatSelect) {
+        let optionsHtml = '';
+        categoriesList.forEach(cat => {
+            optionsHtml += `<option value="${cat.id}">${cat.name_ar}</option>`;
+        });
+        adCatSelect.innerHTML = optionsHtml;
+    }
+}
+
+function renderCityChips() {
+    const container = document.getElementById('cities-chips-container');
+    if (!container) return;
+
+    const provinces = [...new Set(locationsList.map(l => l.province))];
+    let html = `
+        <span class="chip ${currentFilterCity === 'all' ? 'active' : ''}" onclick="window.selectCityChip(this, 'all')">
+            <i class="ri-map-pin-fill"></i> كل المحافظات
+        </span>
+    `;
+
+    provinces.forEach(prov => {
+        html += `
+            <span class="chip ${currentFilterCity === prov ? 'active' : ''}" onclick="window.selectCityChip(this, '${prov}')">
+                <i class="ri-map-pin-fill"></i> ${prov}
+            </span>
+        `;
+    });
+
+    container.innerHTML = html;
 }
 
 /* --------------------------------------------------------------------------
-   4. Search Preview & Quick Fill
+   6. Filtering, Sorting & Rendering Listings
    -------------------------------------------------------------------------- */
-window.fillSearch = function(query) {
-    const searchInput = document.getElementById('search-query');
-    searchInput.value = query;
-    showSearchToast();
-};
+function applyFiltersAndRender() {
+    filteredListings = allListings.filter(item => {
+        // Category filter
+        if (currentFilterCategory !== 'all' && item.category_id != currentFilterCategory) {
+            return false;
+        }
 
-window.showSearchToast = function() {
-    const query = document.getElementById('search-query').value || 'الإعلانات';
-    const citySelect = document.getElementById('city-select');
-    const cityText = citySelect.options[citySelect.selectedIndex].text;
-    showToast(`🔍 تجربة بحث عن: "${query}" في (${cityText}). انتظرنا عند الإطلاق!`);
-};
+        // City/Province filter
+        if (currentFilterCity !== 'all') {
+            const locProv = item.locations ? item.locations.province : '';
+            if (locProv !== currentFilterCity) return false;
+        }
+
+        // Text Search query filter
+        if (currentSearchQuery) {
+            const query = currentSearchQuery.toLowerCase();
+            const titleMatch = item.title && item.title.toLowerCase().includes(query);
+            const descMatch = item.description && item.description.toLowerCase().includes(query);
+            if (!titleMatch && !descMatch) return false;
+        }
+
+        return true;
+    });
+
+    // Sorting
+    if (currentSort === 'price-asc') {
+        filteredListings.sort((a, b) => a.price - b.price);
+    } else if (currentSort === 'price-desc') {
+        filteredListings.sort((a, b) => b.price - a.price);
+    } else if (currentSort === 'views') {
+        filteredListings.sort((a, b) => (b.views_count || 0) - (a.views_count || 0));
+    } else {
+        // newest
+        filteredListings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    renderListings();
+}
+
+function renderListings() {
+    const grid = document.getElementById('listings-grid');
+    const emptyEl = document.getElementById('listings-empty');
+
+    if (!grid) return;
+
+    if (filteredListings.length === 0) {
+        grid.innerHTML = '';
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        return;
+    }
+
+    if (emptyEl) emptyEl.classList.add('hidden');
+
+    let html = '';
+    filteredListings.forEach(item => {
+        const isFav = favoritesSet.has(item.id);
+        const mainImage = (item.listing_images && item.listing_images.length > 0)
+            ? item.listing_images[0].image_url
+            : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800';
+
+        const categoryName = item.categories ? item.categories.name_ar : 'عام';
+        const locationName = item.locations ? `${item.locations.province} - ${item.locations.city_or_area}` : 'العراق';
+        const formattedPrice = new Intl.NumberFormat('en-US').format(item.price);
+        const dateStr = formatRelativeDate(item.created_at);
+
+        html += `
+            <div class="listing-card" onclick="window.openDetailModal(${item.id})">
+                <div class="card-image-box">
+                    <img src="${mainImage}" alt="${item.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800'">
+                    <div class="card-badges">
+                        <span class="badge-cat">${categoryName}</span>
+                        ${item.condition ? `<span class="badge-condition">${item.condition}</span>` : ''}
+                    </div>
+                    <button class="fav-btn-card ${isFav ? 'active' : ''}" onclick="window.toggleFavorite(event, ${item.id})" title="حفظ بالمفضلة">
+                        <i class="${isFav ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+                    </button>
+                </div>
+                <div class="card-content">
+                    <div class="card-price-row">
+                        <span class="card-price">$${formattedPrice}</span>
+                        ${item.is_negotiable ? '<span class="negotiable-tag">قابل للتفاوض</span>' : ''}
+                    </div>
+                    <h3 class="card-title">${item.title}</h3>
+                    <div class="card-footer-meta">
+                        <span class="meta-loc"><i class="ri-map-pin-line"></i> ${locationName}</span>
+                        <span class="meta-time"><i class="ri-time-line"></i> ${dateStr}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    grid.innerHTML = html;
+}
 
 /* --------------------------------------------------------------------------
-   5. Category & City Interactive Toasts
+   7. Global Filter Handlers & Search
    -------------------------------------------------------------------------- */
-window.showCategoryToast = function(categoryName) {
-    showToast(`✨ قسم "${categoryName}" سيكون متاحاً بالكامل قريباً مع آلاف الإعلانات!`);
+window.filterByCategory = function(catId, btnEl) {
+    currentFilterCategory = catId;
+    document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    // Scroll to live listings section smoothly
+    const section = document.getElementById('live-listings-section');
+    if (section) section.scrollIntoView({ behavior: 'smooth' });
+
+    applyFiltersAndRender();
+};
+
+window.filterByCity = function(cityName) {
+    currentFilterCity = cityName;
+    document.querySelectorAll('.chip').forEach(c => {
+        if (c.innerText.includes(cityName) || (cityName === 'all' && c.innerText.includes('كل'))) {
+            c.classList.add('active');
+        } else {
+            c.classList.remove('active');
+        }
+    });
+    applyFiltersAndRender();
 };
 
 window.selectCityChip = function(chipEl, cityName) {
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
     chipEl.classList.add('active');
 
-    // Update select dropdown
+    currentFilterCity = cityName;
     const citySelect = document.getElementById('city-select');
-    for (let i = 0; i < citySelect.options.length; i++) {
-        if (citySelect.options[i].text.includes(cityName)) {
-            citySelect.selectedIndex = i;
-            break;
-        }
-    }
+    if (citySelect) citySelect.value = cityName;
 
-    showToast(`📍 تم تحديد محافظة: ${cityName}`);
+    applyFiltersAndRender();
+};
+
+window.handleSearchInput = function(val) {
+    currentSearchQuery = val.trim();
+    applyFiltersAndRender();
+};
+
+window.performSearch = function() {
+    const val = document.getElementById('search-query').value;
+    currentSearchQuery = val.trim();
+
+    const section = document.getElementById('live-listings-section');
+    if (section) section.scrollIntoView({ behavior: 'smooth' });
+
+    applyFiltersAndRender();
+};
+
+window.quickSearch = function(term) {
+    const searchInput = document.getElementById('search-query');
+    if (searchInput) searchInput.value = term;
+    window.performSearch();
+};
+
+window.handleSortChange = function(sortValue) {
+    currentSort = sortValue;
+    applyFiltersAndRender();
+};
+
+window.resetFilters = function() {
+    currentFilterCategory = 'all';
+    currentFilterCity = 'all';
+    currentSearchQuery = '';
+    currentSort = 'newest';
+
+    const searchInput = document.getElementById('search-query');
+    if (searchInput) searchInput.value = '';
+
+    const citySelect = document.getElementById('city-select');
+    if (citySelect) citySelect.value = 'all';
+
+    renderCategoryPills();
+    renderCityChips();
+    applyFiltersAndRender();
 };
 
 /* --------------------------------------------------------------------------
-   6. Toast Utility Function
+   8. Add New Listing Modal & Form Submission
    -------------------------------------------------------------------------- */
+function initEventListeners() {
+    const addBtn = document.getElementById('open-add-listing-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            const modal = document.getElementById('add-listing-modal');
+            if (modal) modal.classList.remove('hidden');
+        });
+    }
+
+    const favToggleBtn = document.getElementById('favorites-toggle-btn');
+    if (favToggleBtn) {
+        favToggleBtn.addEventListener('click', () => {
+            if (favoritesSet.size === 0) {
+                showToast('قائمة المفضلة فارغة حالياً!');
+                return;
+            }
+            // Show only favorite listings
+            filteredListings = allListings.filter(l => favoritesSet.has(l.id));
+            renderListings();
+            showToast(`💖 عرض ${favoritesSet.size} إعلان في المفضلة`);
+        });
+    }
+}
+
+window.closeAddListingModal = function() {
+    const modal = document.getElementById('add-listing-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.handleAddListingSubmit = async function(event) {
+    event.preventDefault();
+    if (!supabaseClient) return;
+
+    const title = document.getElementById('ad-title').value.trim();
+    const category_id = parseInt(document.getElementById('ad-category').value, 10);
+    const location_id = parseInt(document.getElementById('ad-location').value, 10);
+    const price = parseFloat(document.getElementById('ad-price').value);
+    const condition = document.getElementById('ad-condition').value;
+    const whatsapp_number = document.getElementById('ad-whatsapp').value.trim();
+    const is_negotiable = document.getElementById('ad-negotiable').checked;
+    const imageUrl = document.getElementById('ad-image-url').value.trim() || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800';
+    const description = document.getElementById('ad-description').value.trim();
+
+    const submitBtn = document.getElementById('submit-ad-btn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0"></div> جاري النشر...';
+    }
+
+    try {
+        const activeUserId = currentUser ? currentUser.id : 1;
+
+        // Insert Listing record
+        const { data: listingData, error: listingError } = await supabaseClient
+            .from('listings')
+            .insert([{
+                user_id: activeUserId,
+                category_id,
+                location_id,
+                title,
+                description,
+                price,
+                is_negotiable,
+                condition,
+                status: 'active',
+                whatsapp_number,
+                views_count: 1
+            }])
+            .select('*');
+
+        if (listingError) throw listingError;
+
+        const newListing = listingData[0];
+
+        // Insert Image record
+        const { error: imageError } = await supabaseClient
+            .from('listing_images')
+            .insert([{
+                listing_id: newListing.id,
+                image_url: imageUrl,
+                is_main: true
+            }]);
+
+        if (imageError) console.error('Image insert error:', imageError);
+
+        showToast('🚀 تم نشر إعلانك بنجاح وحفظه في Supabase!');
+        window.closeAddListingModal();
+        document.getElementById('add-listing-form').reset();
+
+        // Refresh listings feed
+        await fetchListings();
+    } catch (err) {
+        console.error('Error creating listing:', err);
+        showToast('حدث خطأ أثناء إضافة الإعلان. يرجى الملاحظة والتأكد من المدخلات.');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="ri-check-line"></i> <span>نشر الإعلان الآن</span>';
+        }
+    }
+};
+
+/* --------------------------------------------------------------------------
+   9. Listing Detail Modal
+   -------------------------------------------------------------------------- */
+window.openDetailModal = async function(listingId) {
+    const item = allListings.find(l => l.id === listingId);
+    if (!item) return;
+
+    // Increment view count in Supabase
+    if (supabaseClient) {
+        supabaseClient
+            .from('listings')
+            .update({ views_count: (item.views_count || 0) + 1 })
+            .eq('id', listingId)
+            .then(() => { item.views_count = (item.views_count || 0) + 1; });
+    }
+
+    const modal = document.getElementById('listing-detail-modal');
+    const container = document.getElementById('detail-modal-body');
+
+    const mainImage = (item.listing_images && item.listing_images.length > 0)
+        ? item.listing_images[0].image_url
+        : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800';
+
+    const categoryName = item.categories ? item.categories.name_ar : 'عام';
+    const locationName = item.locations ? `${item.locations.province} - ${item.locations.city_or_area}` : 'العراق';
+    const formattedPrice = new Intl.NumberFormat('en-US').format(item.price);
+    const whatsappClean = (item.whatsapp_number || '07700000000').replace(/[^0-9]/g, '');
+    const whatsappLink = `https://wa.me/964${whatsappClean.startsWith('0') ? whatsappClean.slice(1) : whatsappClean}?text=${encodeURIComponent('السلام عليكم، أنا مهتم بإعلانك على سوق الرافدين: ' + item.title)}`;
+
+    container.innerHTML = `
+        <div class="detail-gallery">
+            <img src="${mainImage}" alt="${item.title}">
+        </div>
+        <div class="detail-info">
+            <div>
+                <div class="detail-price-box">
+                    <span class="detail-price">$${formattedPrice}</span>
+                    ${item.is_negotiable ? '<span class="negotiable-tag">السعر قابل للتفاوض</span>' : ''}
+                </div>
+                <h2 class="detail-title">${item.title}</h2>
+                <div class="detail-meta-list">
+                    <span class="detail-meta-item"><i class="ri-folder-fill"></i> ${categoryName}</span>
+                    <span class="detail-meta-item"><i class="ri-map-pin-fill"></i> ${locationName}</span>
+                    <span class="detail-meta-item"><i class="ri-checkbox-circle-fill"></i> ${item.condition || 'مستعمل'}</span>
+                    <span class="detail-meta-item"><i class="ri-eye-fill"></i> ${item.views_count || 1} مشاهدة</span>
+                </div>
+                <div class="detail-description">
+                    <strong>الوصف والتفاصيل:</strong>
+                    <p style="margin-top:0.4rem;">${item.description || 'لا يوجد وصف إضافي.'}</p>
+                </div>
+            </div>
+
+            <div class="detail-seller-actions">
+                <a href="${whatsappLink}" target="_blank" class="btn-whatsapp">
+                    <i class="ri-whatsapp-line" style="font-size:1.4rem;"></i>
+                    <span>مراسلة البائع عبر الواتساب (${item.whatsapp_number || 'تواصل'})</span>
+                </a>
+            </div>
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+};
+
+window.closeDetailModal = function() {
+    const modal = document.getElementById('listing-detail-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+/* --------------------------------------------------------------------------
+   10. Helper Utilities
+   -------------------------------------------------------------------------- */
+function formatRelativeDate(dateString) {
+    if (!dateString) return 'قبل قليل';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffSeconds = Math.floor((now - date) / 1000);
+
+    if (diffSeconds < 60) return 'قبل ثوانٍ';
+    if (diffSeconds < 3600) return `قبل ${Math.floor(diffSeconds / 60)} دقيقة`;
+    if (diffSeconds < 86400) return `قبل ${Math.floor(diffSeconds / 3600)} ساعة`;
+    return `قبل ${Math.floor(diffSeconds / 86400)} يوم`;
+}
+
 let toastTimeout;
 function showToast(message) {
     const toast = document.getElementById('toast');
     const toastText = document.getElementById('toast-text');
 
-    toastText.innerText = message;
-    toast.classList.add('show');
+    if (toast && toastText) {
+        toastText.innerText = message;
+        toast.classList.add('show');
 
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-    }, 4000);
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 4000);
+    }
 }

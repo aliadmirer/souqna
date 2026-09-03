@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سوقنا | أقوى منصة إعلانات مبوبة في العراق - قريباً</title>
+    <title>سوق الرافدين | أقوى منصة إعلانات مبوبة في العراق - متصل بـ Supabase</title>
     <meta name="description"
-        content="منصة سوقنا الإعلانية الأولى في العراق. بيع وشراء السيارات، العقارات، الإلكترونيات، الوظائف والخدمات بأمان وسهولة. سجل بريدك ليصلك إشعار فور الإطلاق.">
+        content="منصة سوق الرافدين الإعلانية الأولى في العراق. بيع وشراء السيارات، العقارات، الإلكترونيات، الوظائف والخدمات بأمان وسهولة.">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +17,9 @@
 
     <!-- Remix Icons CDN -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- Supabase JS Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- Stylesheet -->
     <link rel="stylesheet" href="styles.css">
@@ -35,12 +38,31 @@
             <div class="logo">
                 <span class="logo-icon"><i class="ri-shopping-bag-3-fill"></i></span>
                 <div class="logo-text">
-                    <span class="brand-name">سوقنا<span class="brand-dot">.</span></span>
-                    <span class="brand-tag">SOUQNA</span>
+                    <span class="brand-name">سوق الرافدين<span class="brand-dot">.</span></span>
+                    <span class="brand-tag">RAFIDAIN</span>
                 </div>
             </div>
 
             <div class="nav-actions">
+                <div id="auth-nav-container" class="auth-nav-container">
+                    <button class="btn btn-outline-nav" onclick="window.openAuthModal('login')">
+                        <i class="ri-user-3-line"></i>
+                        <span>تسجيل الدخول</span>
+                    </button>
+                    <button class="btn btn-primary-nav" onclick="window.openAuthModal('signup')">
+                        <i class="ri-user-add-line"></i>
+                        <span>تسجيل جديد</span>
+                    </button>
+                </div>
+
+                <button id="open-add-listing-btn" class="btn btn-post-ad">
+                    <i class="ri-add-line"></i>
+                    <span>إضافة إعلان مجاناً</span>
+                </button>
+                <button id="favorites-toggle-btn" class="btn-icon-nav" title="المفضلة">
+                    <i class="ri-heart-3-line"></i>
+                    <span id="fav-badge" class="badge">0</span>
+                </button>
                 <div class="country-badge">
                     <span class="flag">🇮🇶</span>
                     <span>العراق</span>
@@ -60,7 +82,7 @@
             <div class="container">
                 <div class="hero-badge">
                     <span class="pulse-dot"></span>
-                    <span>🚀 قريباً جِدّاً .. أقوى منصة إعلانات مبوبة مستوحاة عالمياً</span>
+                    <span>⚡ متصل حالياً بقاعدة بيانات Supabase المباشرة 🇮🇶</span>
                 </div>
 
                 <h1 class="hero-title">
@@ -68,35 +90,26 @@
                 </h1>
 
                 <p class="hero-description">
-                    نحن نعمل على تجهيز منصة <strong>سوقنا</strong> لتكون المكان الأسرع والأكثر أماناً لتصفح آلاف
-                    الإعلانات المبوبة يومياً: من السيارات والعقارات، إلى الإلكترونيات والوظائف في كل المحافظات.
+                    تصفح أحدث الإعلانات الحية أو أضف إعلانك الخاص فوراً في أكبر تجمع للبيع والشراء في العراق.
                 </p>
 
-                <!-- Souqna Inspired Search Bar Preview -->
+                <!-- Search Preview Box -->
                 <div class="search-preview-box">
                     <div class="search-preview-header">
                         <i class="ri-search-2-line"></i>
-                        <span>معاينة شريط البحث المستقبلي</span>
+                        <span>محرك البحث المباشر عن الإعلانات</span>
                     </div>
-                    <form id="search-preview-form" class="search-preview-form"
-                        onsubmit="event.preventDefault(); window.showSearchToast();">
+                    <form id="hero-search-form" class="search-preview-form" onsubmit="event.preventDefault(); window.performSearch();">
                         <div class="input-group search-input">
                             <i class="ri-search-line"></i>
                             <input type="text" id="search-query"
-                                placeholder="عن ماذا تبحث؟ (مثال: تويوتا أربيل، شقة للإيجار...)"
-                                value="تويوتا كامري 2023 أربيل">
+                                placeholder="عن ماذا تبحث؟ (مثال: كامري، شقة للبيع، آيفون...)"
+                                oninput="window.handleSearchInput(this.value)">
                         </div>
                         <div class="input-group location-input">
                             <i class="ri-map-pin-2-line"></i>
-                            <select id="city-select">
+                            <select id="city-select" onchange="window.filterByCity(this.value)">
                                 <option value="all">كل المحافظات</option>
-                                <option value="baghdad">بغداد</option>
-                                <option value="erbil" selected>أربيل</option>
-                                <option value="basra">البصرة</option>
-                                <option value="mosul">الموصل</option>
-                                <option value="sulaymaniyah">السليمانية</option>
-                                <option value="najaf">النجف الأشرف</option>
-                                <option value="karbala">كربلاء المقدسة</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-search">
@@ -106,142 +119,100 @@
                     </form>
                     <div class="search-tags">
                         <span class="tag-title">الأكثر بحثاً:</span>
-                        <span class="tag" onclick="fillSearch('سيارات للبيع')">سيارات للبيع</span>
-                        <span class="tag" onclick="fillSearch('شقق للإيجار في بغداد')">شقق للإيجار</span>
-                        <span class="tag" onclick="fillSearch('آيفون 15 برو ماكس')">آيفون 15</span>
-                        <span class="tag" onclick="fillSearch('وظائف هندسة وتقنية')">وظائف بغداد</span>
+                        <span class="tag" onclick="window.quickSearch('سيارات')">سيارات</span>
+                        <span class="tag" onclick="window.quickSearch('شقة')">عقارات وشقق</span>
+                        <span class="tag" onclick="window.quickSearch('آيفون')">آيفون 15</span>
+                        <span class="tag" onclick="window.quickSearch('قنفات')">أثاث</span>
                     </div>
                 </div>
 
-                <!-- Newsletter Subscription Box -->
-                <div class="subscribe-card">
-                    <div class="subscribe-content">
-                        <h3><i class="ri-notification-3-line"></i> كن أول من يعلم عند الإطلاق!</h3>
-                        <p>سجل بريدك الإلكتروني أو رقم هاتفك لتصلك دعوة تجريبية حصرية مع هدية ترقية إعلاناتك مجاناً.</p>
-
-                        <form id="subscribe-form" class="subscribe-form">
-                            <div class="subscribe-input-wrapper">
-                                <i class="ri-mail-line input-icon"></i>
-                                <input type="text" id="user-contact" placeholder="أدخل بريدك الإلكتروني أو رقم هاتفك..."
-                                    required>
-                                <button type="submit" class="btn btn-primary btn-subscribe">
-                                    <span>اشترك الآن</span>
-                                    <i class="ri-send-plane-fill"></i>
-                                </button>
-                            </div>
-                        </form>
+                <!-- Stats summary bar -->
+                <div class="db-stats-bar">
+                    <div class="stat-item">
+                        <i class="ri-article-fill"></i>
+                        <div>
+                            <strong id="stat-listings-count">0</strong>
+                            <span>إعلان نشط</span>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Countdown Timer -->
-                <div class="countdown-container">
-                    <h4 class="countdown-title">الوقت المتبقي على الإطلاق الرسمي:</h4>
-                    <div class="countdown-timer" id="countdown">
-                        <div class="time-box">
-                            <span id="days" class="number">14</span>
-                            <span class="label">يوم</span>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <i class="ri-grid-fill"></i>
+                        <div>
+                            <strong id="stat-categories-count">0</strong>
+                            <span>أقسام رئيسية</span>
                         </div>
-                        <div class="time-colon">:</div>
-                        <div class="time-box">
-                            <span id="hours" class="number">08</span>
-                            <span class="label">ساعة</span>
-                        </div>
-                        <div class="time-colon">:</div>
-                        <div class="time-box">
-                            <span id="minutes" class="number">32</span>
-                            <span class="label">دقيقة</span>
-                        </div>
-                        <div class="time-colon">:</div>
-                        <div class="time-box">
-                            <span id="seconds" class="number">15</span>
-                            <span class="label">ثانية</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <i class="ri-map-pin-fill"></i>
+                        <div>
+                            <strong id="stat-locations-count">0</strong>
+                            <span>موقع ومحافظة</span>
                         </div>
                     </div>
                 </div>
-
             </div>
         </section>
 
-        <!-- Category Grid Section (Kleinanzeigen Style) -->
+        <!-- Live Listings Feed Section (Powered by Supabase) -->
+        <section class="listings-section" id="live-listings-section">
+            <div class="container">
+                <div class="section-header align-right">
+                    <div class="header-titles">
+                        <h2><i class="ri-flashlight-fill icon-live"></i> الإعلانات الحية من Supabase</h2>
+                        <p>تصفح أحدث العروض والسلع المضافة حديثاً في السوق العراقي</p>
+                    </div>
+                    <div class="listings-sort-wrapper">
+                        <label for="sort-select"><i class="ri-sort-desc"></i> ترتيب حسب:</label>
+                        <select id="sort-select" onchange="window.handleSortChange(this.value)">
+                            <option value="newest">الأحدث أولاً</option>
+                            <option value="price-asc">السعر: من الأقل إلى الأعلى</option>
+                            <option value="price-desc">السعر: من الأعلى إلى الأقل</option>
+                            <option value="views">الأكثر مشاهدة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Category Pills Filter Bar -->
+                <div class="category-pills-bar" id="category-pills-bar">
+                    <button class="cat-pill active" onclick="window.filterByCategory('all', this)">
+                        <i class="ri-apps-2-line"></i> الكل
+                    </button>
+                    <!-- Dynamic categories will load here -->
+                </div>
+
+                <!-- Listings Loading State -->
+                <div id="listings-loading" class="listings-loading">
+                    <div class="spinner"></div>
+                    <p>جاري جلب الإعلانات المباشرة من Supabase...</p>
+                </div>
+
+                <!-- Listings Empty State -->
+                <div id="listings-empty" class="listings-empty hidden">
+                    <i class="ri-inbox-line"></i>
+                    <h3>لا تتوفر إعلانات مطابقة للبحث حالياً</h3>
+                    <p>جرب البحث بكلمات أخرى أو اختر تصفية مختلفة</p>
+                    <button class="btn btn-primary" onclick="window.resetFilters()">إعادة ضبط الفلاتر</button>
+                </div>
+
+                <!-- Listings Grid -->
+                <div class="listings-grid" id="listings-grid">
+                    <!-- Dynamic Listing Cards rendered via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Category Grid Section -->
         <section class="categories-section">
             <div class="container">
                 <div class="section-header">
-                    <h2>الأقسام الرئيسية المرتقبة</h2>
-                    <p>تصميم أيقونات شبكي نظيف وعصري مستوحى من سوقنا لتصفح مباشر وسهل</p>
+                    <h2>الأقسام الرئيسية في "سوق الرافدين"</h2>
+                    <p>اختر القسم المناسب لتصفح الإعلانات المخصصة</p>
                 </div>
 
-                <div class="category-grid">
-                    <div class="category-card" onclick="showCategoryToast('السيارات والمركبات')">
-                        <div class="cat-icon cat-cars">
-                            <i class="ri-car-fill"></i>
-                        </div>
-                        <h3>السيارات والمركبات</h3>
-                        <p>سيارات جديدة ومستعملة، دراجات، وقطع غيار</p>
-                        <span class="cat-badge">قريباً</span>
-                    </div>
-
-                    <div class="category-card" onclick="showCategoryToast('العقارات والشقق')">
-                        <div class="cat-icon cat-realestate">
-                            <i class="ri-home-4-fill"></i>
-                        </div>
-                        <h3>العقارات والشقق</h3>
-                        <p>بيوت للبيع والإيجار، أراضي ومكاتب تجارية</p>
-                        <span class="cat-badge">قريباً</span>
-                    </div>
-
-                    <div class="category-card" onclick="showCategoryToast('الإلكترونيات والموبايلات')">
-                        <div class="cat-icon cat-electronics">
-                            <i class="ri-smartphone-fill"></i>
-                        </div>
-                        <h3>الإلكترونيات والموبايلات</h3>
-                        <p>هواتف، أجهزة كمبيوتر، شاشات وأجهزة منزلية</p>
-                        <span class="cat-badge">قريباً</span>
-                    </div>
-
-                    <div class="category-card" onclick="showCategoryToast('الوظائف وفرص العمل')">
-                        <div class="cat-icon cat-jobs">
-                            <i class="ri-briefcase-4-fill"></i>
-                        </div>
-                        <h3>الوظائف وفرص العمل</h3>
-                        <p>وظائف شاغرة في كبرى الشركات والمؤسسات</p>
-                        <span class="cat-badge">قريباً</span>
-                    </div>
-
-                    <div class="category-card" onclick="showCategoryToast('الخدمات والأعمال')">
-                        <div class="cat-icon cat-services">
-                            <i class="ri-tools-fill"></i>
-                        </div>
-                        <h3>الخدمات والأعمال</h3>
-                        <p>صيانة، نقل عفش، تعليم، واستشارات</p>
-                        <span class="cat-badge">قريباً</span>
-                    </div>
-
-                    <div class="category-card" onclick="showCategoryToast('الأثاث والمنزل')">
-                        <div class="cat-icon cat-furniture">
-                            <i class="ri-sofa-fill"></i>
-                        </div>
-                        <h3>الأثاث والمنزل</h3>
-                        <p>غرف نوم، مطابخ، ديكور، ومستلزمات حدائق</p>
-                        <span class="cat-badge">قريباً</span>
-                    </div>
-
-                    <div class="category-card" onclick="showCategoryToast('الموضة والأزياء')">
-                        <div class="cat-icon cat-fashion">
-                            <i class="ri-t-shirt-fill"></i>
-                        </div>
-                        <h3>الموضة والأزياء</h3>
-                        <p>ملابس، ساعات، إكسسوارات وعطور</p>
-                        <span class="cat-badge">قريباً</span>
-                    </div>
-
-                    <div class="category-card" onclick="showCategoryToast('الحيوانات والأليفات')">
-                        <div class="cat-icon cat-pets">
-                            <i class="ri-bear-smile-fill"></i>
-                        </div>
-                        <h3>الحيوانات والأليفات</h3>
-                        <p>طيور، أليفات، ومستلزمات العناية بها</p>
-                        <span class="cat-badge">قريباً</span>
-                    </div>
+                <div class="category-grid" id="category-cards-container">
+                    <!-- Dynamic categories from Supabase rendered here -->
                 </div>
             </div>
         </section>
@@ -251,71 +222,191 @@
             <div class="container">
                 <div class="cities-box">
                     <div class="cities-content">
-                        <h3><i class="ri-map-pin-user-fill"></i> تغطية كاملة لكل المحافظات العراقية 🇮🇶</h3>
-                        <p>أينما كنت في العراق، ستتمكن من تصفح الإعلانات وتحديد مدينتك وحيك بسهولة فائقة.</p>
+                        <h3><i class="ri-map-pin-user-fill"></i> تصفح حسب المحافظة 🇮🇶</h3>
+                        <p>اضغط على أي محافظة لتصفية الإعلانات المتاحة فيها فوراً.</p>
                     </div>
-                    <div class="city-chips">
-                        <span class="chip active" onclick="selectCityChip(this, 'بغداد')"><i
-                                class="ri-map-pin-fill"></i> بغداد</span>
-                        <span class="chip" onclick="selectCityChip(this, 'أربيل')"><i class="ri-map-pin-fill"></i>
-                            أربيل</span>
-                        <span class="chip" onclick="selectCityChip(this, 'البصرة')"><i class="ri-map-pin-fill"></i>
-                            البصرة</span>
-                        <span class="chip" onclick="selectCityChip(this, 'الموصل')"><i class="ri-map-pin-fill"></i>
-                            الموصل</span>
-                        <span class="chip" onclick="selectCityChip(this, 'السليمانية')"><i class="ri-map-pin-fill"></i>
-                            السليمانية</span>
-                        <span class="chip" onclick="selectCityChip(this, 'النجف')"><i class="ri-map-pin-fill"></i>
-                            النجف</span>
-                        <span class="chip" onclick="selectCityChip(this, 'كربلاء')"><i class="ri-map-pin-fill"></i>
-                            كربلاء</span>
-                        <span class="chip" onclick="selectCityChip(this, 'دهوك')"><i class="ri-map-pin-fill"></i>
-                            دهوك</span>
-                        <span class="chip" onclick="selectCityChip(this, 'كركوك')"><i class="ri-map-pin-fill"></i>
-                            كركوك</span>
-                        <span class="chip" onclick="selectCityChip(this, 'الناصرية')"><i class="ri-map-pin-fill"></i>
-                            الناصرية</span>
-                        <span class="chip" onclick="selectCityChip(this, 'العمارة')"><i class="ri-map-pin-fill"></i>
-                            العمارة</span>
-                        <span class="chip" onclick="selectCityChip(this, 'الديوانية')"><i class="ri-map-pin-fill"></i>
-                            الديوانية</span>
-                        <span class="chip" onclick="selectCityChip(this, 'الرمادي')"><i class="ri-map-pin-fill"></i>
-                            الرمادي</span>
-                        <span class="chip" onclick="selectCityChip(this, 'الحلة')"><i class="ri-map-pin-fill"></i>
-                            الحلة</span>
+                    <div class="city-chips" id="cities-chips-container">
+                        <!-- Dynamic city chips from Supabase locations -->
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Features / Why Us -->
-        <section class="features-section">
+        <!-- Newsletter / Notification Subscribe -->
+        <section class="subscribe-section">
             <div class="container">
-                <div class="section-header">
-                    <h2>لماذا منصة "سوقنا"؟</h2>
-                    <p>الميزات الأكثر قوة وسهولة التي نعدك بها فور الإطلاق الرسمي</p>
-                </div>
+                <div class="subscribe-card">
+                    <div class="subscribe-content">
+                        <h3><i class="ri-notification-3-line"></i> اشترك في تنبيهات "سوق الرافدين"</h3>
+                        <p>سجل بريدك الإلكتروني ليصلك كل جديد واشترك في النشرة التنبيهية الخاصة بالإعلانات.</p>
 
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feat-icon"><i class="ri-speed-up-fill"></i></div>
-                        <h3>نشر سريع في ثوانٍ</h3>
-                        <p>أضف إعلانك بضغطة زر مع رفع الصور بسهولة وسرعة فائقة دون تعقيدات.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feat-icon"><i class="ri-whatsapp-fill"></i></div>
-                        <h3>تواصل مباشر عبر الواتساب والشات</h3>
-                        <p>تواصل مع البائع أو المشتري مباشرة عبر المحادثة الفورية دون وسطاء.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feat-icon"><i class="ri-shield-check-fill"></i></div>
-                        <h3>إعلانات موثوقة وآمنة</h3>
-                        <p>نظام ذكي لفحص الإعلانات وتوثيق البائعين لتجربة تسوق آمنة 100%.</p>
+                        <form id="subscribe-form" class="subscribe-form">
+                            <div class="subscribe-input-wrapper">
+                                <i class="ri-mail-line input-icon"></i>
+                                <input type="text" id="user-contact" placeholder="أدخل بريدك الإلكتروني..." required>
+                                <button type="submit" class="btn btn-primary btn-subscribe">
+                                    <span>اشترك الآن</span>
+                                    <i class="ri-send-plane-fill"></i>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </section>
     </main>
+
+    <!-- Modal: Add New Listing (إضافة إعلان جديد) -->
+    <div id="add-listing-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="ri-add-circle-fill icon-green"></i> إضافة إعلان جديد إلى Supabase</h3>
+                <button class="modal-close" onclick="window.closeAddListingModal()">&times;</button>
+            </div>
+            <form id="add-listing-form" class="modal-body" onsubmit="window.handleAddListingSubmit(event)">
+                <div class="form-group">
+                    <label for="ad-title">عنوان الإعلان *</label>
+                    <input type="text" id="ad-title" placeholder="مثال: تويوتا كورولا 2022 نظيفة جداً" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ad-category">القسم *</label>
+                        <select id="ad-category" required>
+                            <!-- Dynamic options -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ad-location">المحافظة والمنطقة *</label>
+                        <select id="ad-location" required>
+                            <!-- Dynamic options -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ad-price">السعر (بالدولار الأمريكي $) *</label>
+                        <input type="number" id="ad-price" placeholder="مثال: 15000" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ad-condition">الحالة *</label>
+                        <select id="ad-condition" required>
+                            <option value="جديد">جديد</option>
+                            <option value="مستعمل ممتازة" selected>مستعمل ممتازة</option>
+                            <option value="مستعمل جيد">مستعمل جيد</option>
+                            <option value="مستعمل مقبولة">مستعمل مقبولة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ad-whatsapp">رقم الواتساب للتواصل *</label>
+                        <input type="text" id="ad-whatsapp" placeholder="مثال: 07701234567" required>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="ad-negotiable" checked>
+                            <span>السعر قابل للتفاوض</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="ad-image-url">رابط صورة الإعلان (URL)</label>
+                    <input type="url" id="ad-image-url" placeholder="https://images.unsplash.com/..." value="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800">
+                    <small>يمكنك وضع رابط صورة أو ترك الصورة الافتراضية</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="ad-description">وصف التفاصيل *</label>
+                    <textarea id="ad-description" rows="4" placeholder="اكتب تفاصيل الإعلان والمواصفات الكاملة..." required></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="window.closeAddListingModal()">إلغاء</button>
+                    <button type="submit" id="submit-ad-btn" class="btn btn-primary">
+                        <i class="ri-check-line"></i>
+                        <span>نشر الإعلان الآن</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Listing Detail (تفاصيل الإعلان) -->
+    <div id="listing-detail-modal" class="modal-overlay hidden">
+        <div class="modal-card modal-lg">
+            <button class="modal-close floating-close" onclick="window.closeDetailModal()">&times;</button>
+            <div class="detail-container" id="detail-modal-body">
+                <!-- Dynamically populated detail view -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Auth (تسجيل الدخول / إنشاء حساب جديد) -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header auth-modal-header">
+                <div class="auth-tabs">
+                    <button id="tab-login-btn" class="auth-tab active" onclick="window.switchAuthTab('login')">
+                        <i class="ri-login-box-line"></i> تسجيل الدخول
+                    </button>
+                    <button id="tab-signup-btn" class="auth-tab" onclick="window.switchAuthTab('signup')">
+                        <i class="ri-user-add-line"></i> حساب جديد
+                    </button>
+                </div>
+                <button class="modal-close" onclick="window.closeAuthModal()">&times;</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="modal-body" onsubmit="window.handleLoginSubmit(event)">
+                <div class="form-group">
+                    <label for="login-contact">رقم الهاتف أو البريد الإلكتروني *</label>
+                    <input type="text" id="login-contact" placeholder="مثال: 07700000000 أو test@rafidain.iq" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">كلمة المرور *</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="window.closeAuthModal()">إلغاء</button>
+                    <button type="submit" id="login-submit-btn" class="btn btn-primary">
+                        <i class="ri-login-circle-line"></i> <span>تسجيل الدخول</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signup-form" class="modal-body hidden" onsubmit="window.handleSignupSubmit(event)">
+                <div class="form-group">
+                    <label for="signup-name">الاسم الكامل *</label>
+                    <input type="text" id="signup-name" placeholder="مثال: علي العراقي" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signup-phone">رقم الهاتف *</label>
+                        <input type="tel" id="signup-phone" placeholder="07700000000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">البريد الإلكتروني</label>
+                        <input type="email" id="signup-email" placeholder="user@domain.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">كلمة المرور *</label>
+                    <input type="password" id="signup-password" placeholder="••••••••" required minlength="4">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="window.closeAuthModal()">إلغاء</button>
+                    <button type="submit" id="signup-submit-btn" class="btn btn-primary">
+                        <i class="ri-user-add-line"></i> <span>إنشاء الحساب الآن</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast">
@@ -329,9 +420,9 @@
             <div class="footer-brand">
                 <div class="logo">
                     <span class="logo-icon"><i class="ri-shopping-bag-3-fill"></i></span>
-                    <span class="brand-name">سوقنا<span class="brand-dot">.</span></span>
+                    <span class="brand-name">سوق الرافدين<span class="brand-dot">.</span></span>
                 </div>
-                <p>منصة الإعلانات المبوبة الأحدث والأسرع في العراق 🇮🇶</p>
+                <p>منصة الإعلانات المبوبة المربوطة بقاعدة بيانات Supabase المباشرة في العراق 🇮🇶</p>
             </div>
 
             <div class="footer-socials">
@@ -342,7 +433,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>جميع الحقوق محفوظة © 2026 منصة سوقنا - الإعلانات المبوبة في العراق</p>
+            <p>جميع الحقوق محفوظة © 2026 منصة سوق الرافدين - الإعلانات المبوبة في العراق</p>
         </div>
     </footer>
 
