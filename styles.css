@@ -1843,23 +1843,29 @@ body {
     text-align: right;
 }
 
-/* Captcha Anti-Robot Box */
+/* Captcha Anti-Robot Security Box & Answer Input */
 .captcha-box {
     background: var(--bg-main);
-    border: 1px dashed var(--border-color);
-    border-radius: 14px;
-    padding: 1rem;
-    margin-top: 0.5rem;
+    border: 1px dashed rgba(134, 184, 23, 0.4);
+    border-radius: 16px;
+    padding: 1.1rem;
+    margin-top: 0.6rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .captcha-header {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.45rem;
     font-size: 0.85rem;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-muted);
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.75rem;
+}
+
+.captcha-header i {
+    font-size: 1.1rem;
+    color: var(--primary);
 }
 
 .captcha-body {
@@ -1867,11 +1873,16 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 0.9rem;
+    border-radius: 12px;
 }
 
 .captcha-body strong {
     font-family: var(--font-heading);
     font-size: 1.05rem;
+    font-weight: 800;
     color: var(--primary-hover);
     white-space: nowrap;
 }
@@ -1880,10 +1891,31 @@ body {
     color: var(--primary);
 }
 
-.captcha-body input {
-    max-width: 140px;
-    text-align: center;
-    font-weight: 800;
+.captcha-body input#captcha-answer {
+    width: 130px;
+    padding: 0.55rem 0.8rem !important;
+    background: var(--bg-main) !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 10px !important;
+    color: var(--secondary) !important;
+    font-family: var(--font-heading) !important;
+    font-size: 1.1rem !important;
+    font-weight: 900 !important;
+    text-align: center !important;
+    outline: none !important;
+    transition: all var(--transition-fast) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .captcha-body input#captcha-answer {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.captcha-body input#captcha-answer:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(134, 184, 23, 0.25) !important;
+    background: var(--bg-surface) !important;
 }
 
 .btn-whatsapp-auth {
