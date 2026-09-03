@@ -850,7 +850,7 @@ window.handleAddListingSubmit = async function(event) {
 
         if (imageError) console.error('Image insert error:', imageError);
 
-        showToast('🚀 تم نشر إعلانك بنجاح وحفظه في Supabase!');
+        showToast('🚀 تم نشر إعلانك بنجاح في سوق الرافدين!');
         window.closeAddListingModal();
         document.getElementById('add-listing-form').reset();
 
